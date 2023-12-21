@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Library</OutputType>
+    <RootNamespace>KalevaAalto</RootNamespace>
+    <Platforms>AnyCPU;x64</Platforms>
+    <UserSecretsId>3b02d220-d809-491b-a35a-28e9320a18a4</UserSecretsId>
+    <AssemblyName>KalevaAalto.Csharp</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EPPlus" Version="7.0.4" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.55" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Microsoft.ML" Version="2.0.1" />
+    <PackageReference Include="MySql.Data" Version="8.2.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="SqlSugarCore" Version="5.1.4.127" />
+  </ItemGroup>
+
+</Project>
