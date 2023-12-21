@@ -25,9 +25,8 @@ namespace KalevaAalto
     /// </summary>
     public static partial class Main
     {
-
-        public const string projectDir = @"G:\Daily Documents\Code Project\Csharp";
-        public const string workingDir = @"G:\Daily Documents\Foshan HaiHe Folder\Auto Programs";
+        
+        //未找到
         public const int notfound = -1;
 
         public readonly static Regex regexMonthString = new Regex(@"(?<year>\d{4})[年\-\/]?(?<month>\d{1,2})[月]?");
