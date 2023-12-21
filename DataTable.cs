@@ -20,12 +20,15 @@ namespace KalevaAalto
     public static partial class Main
     {
 
-
+        
         public static Dictionary<TKey, int> ToSortDictionary<TKey>(this TKey[] values) where TKey : notnull
         {
             return values.Select((item, index) => new { item, index }).ToDictionary(it => it.item, it => it.index);
         }
 
+        /// <summary>
+        /// SqlSugar类的信息暂存类
+        /// </summary>
         public class SugarColumnInfo
         {
             public string columnName { get; set; } = string.Empty;

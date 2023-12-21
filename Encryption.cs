@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 namespace KalevaAalto
 {
     /// <summary>
-    /// 加密技术
+    /// 加密工具
     /// </summary>
     public static partial class Main
     {
