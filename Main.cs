@@ -789,7 +789,7 @@ namespace KalevaAalto
 
 
 
-
+        public readonly static Action<string> logConsole = (str) => Console.WriteLine(str);
 #if DEBUG
         public readonly static Action<string>? logTest = (str)=> Console.WriteLine(str);
 #else
