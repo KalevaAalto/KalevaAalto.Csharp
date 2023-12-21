@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using NetTaste;
 using System.Text.RegularExpressions;
+using System.Drawing;
 
 namespace KalevaAalto
 {
@@ -673,6 +674,10 @@ namespace KalevaAalto
                 }
             
             }
+
+
+            public Color fontColor { get; set; } = Color.Black;
+
             public bool isAddFoot { get; set; } = false;
             public Type type { get;private set; }
             public ExcelDataColumn(string columnName,Type type)
@@ -705,7 +710,7 @@ namespace KalevaAalto
                 public const string Time = @"HH:mm:ss";
                 public const string ChineseTime = @"HH时mm分ss秒";
 
-
+                
                 public const string Percent = @"0.00%";
 
                 public static string GetPercent(int count)
