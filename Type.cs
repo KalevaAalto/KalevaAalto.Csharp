@@ -21,19 +21,19 @@ namespace KalevaAalto
 
         private readonly static HashSet<Type> standardDataTableType = new HashSet<Type> { 
 
-            //整数
-            typeof(short), typeof(int), typeof(long) ,
-            typeof(short?), typeof(int?), typeof(long?) ,
-
             //无符号整数
             typeof(byte),typeof(ushort), typeof(uint), typeof(ulong) ,
             typeof(byte?),typeof(ushort?), typeof(uint?), typeof(ulong?) ,
+
+            //整数
+            typeof(short), typeof(int), typeof(long) ,
+            typeof(short?), typeof(int?), typeof(long?) ,
 
             //浮点数
             typeof(float) , typeof(double) ,
             typeof(float?) , typeof(double?) ,
 
-            //小数
+            //十字制数
             typeof(decimal),typeof(decimal?),
 
             //布尔
@@ -55,6 +55,9 @@ namespace KalevaAalto
         {
             return standardDataTableType.Contains(type);
         }
+
+
+
 
 
 
