@@ -1391,6 +1391,7 @@ namespace KalevaAalto
         /// <param name="dataTable">要转化的DataTable</param>
         public static async Task<T[]> ToArray<T>(this DataTable dataTable) where T : class, new()
         {
+
             Type objType = typeof(T);
             SugarColumnInfo[] sugarColumnInfos = objType.GetSugarColumns();
             HashSet<string> dataTableColumns = dataTable.Columns.Cast<DataColumn>().Select(iterator => iterator.ColumnName).ToHashSet();

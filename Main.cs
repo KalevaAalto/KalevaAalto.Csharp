@@ -803,6 +803,7 @@ namespace KalevaAalto
             private string subName;
             private Action<string>? log;
             private string workingContent = String.Empty;
+            public List<Task> tasks { get; set; } = new List<Task>();
             public string WorkingContent
             {
                 get
@@ -830,6 +831,21 @@ namespace KalevaAalto
                 }
             }
 
+            public void AddTask(Task task,string? workingContent = null)
+            {
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                task.Start();
+                this.tasks.Add(task);
+                task.Wait();
+                if (!string.IsNullOrEmpty(this.workingContent) && this.log is not null)
+                {
+                    this.log($"进程：{this.subName}：{this.workingContent}成功！！！" + stopwatch.ClockString());
+                }
+
+            }
+            
+
+
             public Workflow(string subName, Action<string>? log)
             {
                 this.log = log;
@@ -854,6 +870,8 @@ namespace KalevaAalto
             }
             public void End()
             {
+
+                Task.WhenAll(this.tasks).Wait();
                 if(this.log is not null)
                 {
                     if (!string.IsNullOrEmpty(this.workingContent))
@@ -864,7 +882,6 @@ namespace KalevaAalto
                     this.log($"进程：{subName}：结束！！！！" + this.globalStopwatch.ClockString());
                 }
 
-                
             }
             public void Stop(string message = KalevaAalto.Main.emptyString)
             {
