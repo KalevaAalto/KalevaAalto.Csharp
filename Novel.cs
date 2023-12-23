@@ -204,13 +204,13 @@ namespace KalevaAalto
             txt, epub, xml
         }
 
-        public static Dictionary<NovelFileFormat, string> novelFileFormatStrings = new Dictionary<NovelFileFormat, string> {
+        public readonly static Dictionary<NovelFileFormat, string> novelFileFormatStrings = new Dictionary<NovelFileFormat, string> {
             { NovelFileFormat.txt , @"txt"},
             { NovelFileFormat.epub , @"epub"},
             { NovelFileFormat.xml , @"xml"},
         };
 
-        public static Dictionary<string, NovelFileFormat> novelFileFormats = new Dictionary<string, NovelFileFormat> {
+        public readonly static Dictionary<string, NovelFileFormat> novelFileFormats = new Dictionary<string, NovelFileFormat> {
             {@"txt",NovelFileFormat.txt},
             {@"epub",NovelFileFormat.epub},
             {@"xml",NovelFileFormat.xml},
@@ -221,7 +221,7 @@ namespace KalevaAalto
         /// <summary>
         /// 小说名称
         /// </summary>
-        public string name { get; set; } = String.Empty;
+        public string name { get; set; } = string.Empty;
 
         /// <summary>
         /// 小说序章
@@ -263,15 +263,14 @@ namespace KalevaAalto
 
 
             //获取小说序章
-            while (pos < contentLines.Length && !regex.IsMatch(contentLines[pos]))
+            for (; pos < contentLines.Length && !regex.IsMatch(contentLines[pos]);pos++)
             {
                 this.prologue.Add(contentLines[pos]);
-                pos++;
             }
 
 
             //获取小说章节
-            while (pos < contentLines.Length)
+            for (; pos < contentLines.Length;pos++)
             {
                 if (regex.IsMatch(contentLines[pos]))
                 {
@@ -279,8 +278,7 @@ namespace KalevaAalto
                 }
                 else
                 {
-                    NovelChapter last_chapter = this.chapters.Last();
-                    last_chapter.Append(contentLines[pos]);
+                    this.chapters.Last().Append(contentLines[pos]);
                 }
                 pos++;
             }
@@ -298,7 +296,6 @@ namespace KalevaAalto
             {
                 result.Append(lineBreak);
                 result.Append(line);
-                
             }
             
             return result.ToString();
@@ -386,7 +383,10 @@ namespace KalevaAalto
             {
                 foreach (NovelChapter chapter in this.chapters)
                 {
-                    if (chapter.name == name) return chapter;
+                    if (chapter.name == name)
+                    {
+                        return chapter;
+                    }
                 }
                 return new NovelChapter("序章", this.prologue.ToArray());
             }
@@ -482,7 +482,7 @@ namespace KalevaAalto
         /// <returns>返回程序是否运行</returns>
         public bool SaveAsTxt(string path)
         {
-            this.ToString().SaveToFile(new Main.FileNameInfo(path,this.name,@"txt").fileName);
+            this.ToString().SaveToFile(new FileNameInfo(path,this.name,@"txt"));
             return true;
         }
 
@@ -493,9 +493,8 @@ namespace KalevaAalto
         /// <param name="pattern">判断标题的正则表达式</param>
         public static Novel LoadNovelFromTxt(string fileName,string pattern = @"第\d+章\-.*")
         {
-            Main.FileNameInfo fileNameInfo = new Main.FileNameInfo(fileName);
-
-            return new Novel(fileNameInfo.name, Main.GetStringFromFile(fileName), pattern);
+            FileNameInfo fileNameInfo = new FileNameInfo(fileName);
+            return new Novel(fileNameInfo.name, GetStringFromFile(fileName), pattern);
         }
 
 
