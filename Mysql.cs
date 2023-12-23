@@ -39,6 +39,7 @@ namespace KalevaAalto
                 InitKeyType = InitKeyType.Attribute, // 从实体特性中获取主键自增列信息  
             });
 
+
         }
 
 
@@ -48,14 +49,16 @@ namespace KalevaAalto
         ~Mysql()
         {
             this.db.Close();
+            this.db.Dispose();
         }
 
 
-        public DataTable Query(string sql)
+        public async Task<DataTable> Query(string sql)
         {
             try
             {
-                return this.db.SqlQueryable<dynamic>(sql).ToDataTable();
+                return await this.db.Ado.GetDataTableAsync(sql);
+
             }
             catch (Exception error)
             {
@@ -65,11 +68,11 @@ namespace KalevaAalto
         }
 
 
-        public void Run(string sql)
+        public async Task Run(string sql)
         {
             try
             {
-                this.db.Ado.ExecuteCommand(sql);
+                await this.db.Ado.ExecuteCommandAsync(sql);
             }
             catch (Exception error)
             {
@@ -78,81 +81,69 @@ namespace KalevaAalto
         }
 
 
-        public string[] GetColumns(string table_name)
+
+        public async Task UploadDataTable(DataTable dataTable)
         {
-            DataTable dataTable = this.Query($"select column_name from information_schema.columns where table_schema=database() and table_name='{table_name}';");
-            List<string> result = new List<string>();
-            foreach (DataRow dataRow in dataTable.Rows) result.Add(dataRow[0]?.ToString() ?? string.Empty);
-            return result.ToArray();
-        }
+            if (dataTable.Rows.Count == 0)
+            {
+                return;
+            }
 
 
-        public string[] GetTableNames()
-        {
-            DataTable dataTable = this.Query($"select distinct(table_name) from information_schema.columns where table_schema=database();");
-            List<string> result = new List<string>();
-            foreach (DataRow dataRow in dataTable.Rows) result.Add(dataRow[0]?.ToString() ?? string.Empty);
-            return result.ToArray();
-        }
 
-
-        public void UploadDataTable(DataTable dataTable)
-        {
-            if (dataTable.Rows.Count == 0) return;
-
-
-            //添加字段名称
             StringBuilder columnString = new StringBuilder();
-            foreach (DataColumn column in dataTable.Columns)
-            {
-                columnString.Append('`');
-                columnString.Append(column.ColumnName);
-                columnString.Append('`');
-                columnString.Append(',');
-            }
-            columnString.Remove(columnString.Length - 1, 1);
-
-
-
-            //添加数据
             StringBuilder dataRowString = new StringBuilder();
-            foreach (DataRow dataRow in dataTable.Rows)
-            {
-                dataRowString.Append('(');
-                foreach (object? cell in dataRow.ItemArray)
+
+            await Task.WhenAll(
+                Task.Run(() =>
                 {
-                    string cellStr = cell?.ToString() ?? string.Empty;
-                    if (cellStr.Length == 0)
+                    foreach (DataColumn column in dataTable.Columns)
                     {
-                        dataRowString.Append(@"NULL");
+                        columnString.Append('`');
+                        columnString.Append(column.ColumnName);
+                        columnString.Append('`');
+                        columnString.Append(',');
                     }
-                    else
+                    columnString.Remove(columnString.Length - 1, 1);
+                }),
+                Task.Run(() =>
+                {
+                    foreach (DataRow dataRow in dataTable.Rows)
                     {
-                        dataRowString.Append('\'');
-                        dataRowString.Append(cellStr);
-                        dataRowString.Append('\'');
+                        dataRowString.Append('(');
+                        foreach (object? cell in dataRow.ItemArray)
+                        {
+                            string cellStr = cell?.ToString() ?? string.Empty;
+                            if (cellStr.Length == 0)
+                            {
+                                dataRowString.Append(@"NULL");
+                            }
+                            else
+                            {
+                                dataRowString.Append('\'');
+                                dataRowString.Append(cellStr);
+                                dataRowString.Append('\'');
+                            }
+                            dataRowString.Append(',');
+                        }
+                        dataRowString.Remove(dataRowString.Length - 1, 1);
+                        dataRowString.Append(')');
+                        dataRowString.Append(',');
                     }
-                    dataRowString.Append(',');
-                }
-                dataRowString.Remove(dataRowString.Length - 1, 1);
-                dataRowString.Append(')');
-                dataRowString.Append(',');
-            }
-            dataRowString.Remove(dataRowString.Length - 1, 1);
-            dataRowString.Append(';');
-
-
-            this.Run($"insert into `{dataTable.TableName}`({columnString.ToString()}) value{dataRowString.ToString()};");
+                    dataRowString.Remove(dataRowString.Length - 1, 1);
+                })
+                );
+            await this.db.Ado.ExecuteCommandAsync($"insert into `{dataTable.TableName}`({columnString.ToString()}) value{dataRowString.ToString()};");
         }
 
 
 
 
-        public void ClearTable(string tableName, string[]? conditions = null)
+        public async Task ClearTable(string tableName, string[]? conditions = null)
         {
             if(conditions is null || conditions.Length == 0)
             {
-                this.Run($"delete from `{tableName}`;") ;
+                await this.db.Ado.ExecuteCommandAsync($"delete from `{tableName}`;") ;
             }
             else
             {
@@ -170,7 +161,7 @@ namespace KalevaAalto
                 }
                 conditionsString.Remove(conditionsString.Length - partString.Length, partString.Length);
 
-                this.Run($"delete from `{tableName}` where {conditionsString.ToString()};");
+                await this.db.Ado.ExecuteCommandAsync($"delete from `{tableName}` where {conditionsString.ToString()};");
             }
 
 
@@ -180,20 +171,25 @@ namespace KalevaAalto
 
 
 
-        public void ClearTable(DataTable table, string[]? conditions = null)
+        public async Task ClearTable(DataTable table, string[]? conditions = null)
         {
-            this.ClearTable(table.TableName, conditions);
-            this.UploadDataTable(table);
+            await this.ClearTable(table.TableName, conditions);
+            await this.UploadDataTable(table);
+        }
+
+        public async Task<string[]> GetColumnNames(string tableName)
+        {
+            DataTable dataTable = await this.Query($"DESC {tableName};");
+            return dataTable.Rows.Cast<DataRow>().Select(it => (string)it[@"Field"]).ToArray();
         }
 
 
-
-        public void Sync(string from_table_name, string to_table_name, string[]? conditions = null)
+        public async Task Sync(string from_table_name, string to_table_name, string[]? conditions = null)
         {
-            this.ClearTable(to_table_name, conditions);
+            await this.ClearTable(to_table_name, conditions);
 
 
-            string[] columns = this.GetColumns(from_table_name);
+            string[] columns = await this.GetColumnNames(from_table_name);
             StringBuilder columns_str = new StringBuilder();
             foreach (string column in columns)
             {
@@ -220,12 +216,9 @@ namespace KalevaAalto
                 sql.Remove(sql.Length - 5, 5);
 
             }
-
-
-
             sql.Append(";");
 
-            this.Run(sql.ToString());
+            await this.db.Ado.ExecuteCommandAsync(sql.ToString());
 
         }
 
@@ -233,14 +226,11 @@ namespace KalevaAalto
 
 
 
-        public void CleanTableRepetitiveContent<T>() where T : class, new()
+        public async Task CleanTableRepetitiveContent<T>() where T : class, new()
         {
-            HashSet<T>  values = this.db.Queryable<T>().ToArray().ToHashSet();
-            this.db.Deleteable<T>().ExecuteCommand();
-            this.db.Insertable(values.ToArray()).ExecuteCommand();
-
-
-
+            T[] values = (await this.db.Queryable<T>().ToArrayAsync()).AsParallel().ToHashSet().ToArray();
+            await this.db.Deleteable<T>().ExecuteCommandAsync();
+            await this.db.Insertable(values).ExecuteCommandAsync();
         }
 
 
@@ -248,10 +238,10 @@ namespace KalevaAalto
 
 
 
-        public void Reconnect()
+        public async void Reconnect()
         {
             // 如果MySQL连接已关闭，则尝试重新连接
-            this.Query(@"select 1;");// 向MySQL服务器发送一个简单的心跳查询
+            await this.Query(@"select 1;");// 向MySQL服务器发送一个简单的心跳查询
 
         }
 
