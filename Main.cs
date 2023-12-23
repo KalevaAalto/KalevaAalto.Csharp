@@ -844,6 +844,13 @@ namespace KalevaAalto
 
             }
             
+            public void Log(string str)
+            {
+                if(this.log != null)
+                {
+                    this.log(str);
+                }
+            }
 
 
             public Workflow(string subName, Action<string>? log)

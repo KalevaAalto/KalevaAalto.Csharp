@@ -548,7 +548,7 @@ namespace KalevaAalto
                             {
                                 newRow[excelColumnMatch.columnName] = 0;
                             }
-                            else if (cell.GetType().IsInteger() || cell.GetType().IsDecimal())
+                            else if (cell.GetType().IsOrNullableNumber())
                             {
                                 newRow[excelColumnMatch.columnName] = Convert.ToInt32(cell);
                             }
@@ -567,7 +567,7 @@ namespace KalevaAalto
                             {
                                 newRow[excelColumnMatch.columnName] = 0;
                             }
-                            else if (cell.GetType().IsInteger() || cell.GetType().IsDecimal())
+                            else if (cell.GetType().IsOrNullableNumber())
                             {
                                 newRow[excelColumnMatch.columnName] = Convert.ToDecimal(cell);
                             }
@@ -586,7 +586,7 @@ namespace KalevaAalto
                             {
                                 newRow[excelColumnMatch.columnName] = 0;
                             }
-                            else if (cell.GetType().IsInteger() || cell.GetType().IsDecimal())
+                            else if (cell.GetType().IsOrNullableNumber())
                             {
                                 newRow[excelColumnMatch.columnName] = Convert.ToDouble(cell);
                             }
