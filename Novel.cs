@@ -46,7 +46,7 @@ namespace KalevaAalto
         /// </summary>
         public List<string> paragraphs { get; private set; } = new List<string>();
 
-        private static Regex defaultRegex = new Regex(@"\S[\S ]*");
+        private readonly static Regex defaultRegex = new Regex(@"\S[\S ]*", RegexOptions.Compiled);
 
         /// <summary>
         /// 根据小说章节内容来分段落
@@ -55,22 +55,7 @@ namespace KalevaAalto
         /// <returns></returns>
         public static string[] Split(string content)
         {
-            List<string> result = new List<string>();
-
-            // 获取第一个匹配
-            Match match = defaultRegex.Match(content);
-
-            // 循环遍历所有匹配
-            while (match.Success)
-            {
-                // 获取分组的内容(如 (.*))
-                string group = match.Groups[0].Value;
-                result.Add(group.Trim());
-
-                // 获取下一个匹配
-                match = match.NextMatch();
-            }
-            return result.ToArray();
+            return defaultRegex.Matches(content).Select(match => match.Value).ToArray();
         }
 
 
@@ -79,7 +64,7 @@ namespace KalevaAalto
         /// </summary>
         /// <param name="name">小说章节名</param>
         /// <param name="content">小说章节内容</param>
-        public NovelChapter(string name, string content = "")
+        public NovelChapter(string name, string content = emptyString)
         {
             this.name = name;
             this.Append(content);
@@ -103,7 +88,7 @@ namespace KalevaAalto
         /// <param name="content">要添加的内容</param>
         public void Append(string content)
         {
-            this.paragraphs.InsertRange(this.paragraphs.Count, Split(content));
+            this.paragraphs.AddRange(Split(content));
         }
 
         /// <summary>
@@ -114,7 +99,7 @@ namespace KalevaAalto
         {
             foreach(string content in contents)
             {
-                this.paragraphs.InsertRange(this.paragraphs.Count, Split(content));
+                this.paragraphs.AddRange(Split(content));
             }
         }
 
@@ -255,16 +240,6 @@ namespace KalevaAalto
         }
 
         public List<NovelChapter> chapters { get; private set; } = new List<NovelChapter>();
-
-        /// <summary>
-        /// 生成空小说对象
-        /// </summary>
-        public Novel()
-        {
-
-        }
-
-        
 
 
 
