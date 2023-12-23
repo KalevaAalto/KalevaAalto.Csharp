@@ -1347,7 +1347,7 @@ namespace KalevaAalto
                     SugarColumnInfo column = sugarColumnInfos[j];
                     PropertyInfo propertyInfo = valueType.GetProperty(column.propertyName)!;
                     object? obj = propertyInfo.GetValue(row);
-                    ExcelRange cell = worksheet.Cells[startRow + i, serCol + j];
+                    cell = worksheet.Cells[startRow + i, serCol + j];
                     if (obj is null)
                     {
                         if (column.type.IsOrNullableNumber())
