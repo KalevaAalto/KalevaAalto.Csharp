@@ -1305,8 +1305,8 @@ namespace KalevaAalto
                 excelDataColumnsDic[column.columnName] = excelDataColumn;
             }
             ExcelWorksheet worksheet = package.Workbook.Worksheets.Add(tableName);
-            int titleRow = 1, startRow = 2, serCol = 1, rowsCount = values.Length, columnsCount = sugarColumnInfos.Length;
             ExcelRange rng, cell;
+            int titleRow = 1, startRow = 2, serCol = 1, rowsCount = values.Length, columnsCount = sugarColumnInfos.Length;
             #endregion
 
             #region 录入字段
@@ -1315,6 +1315,9 @@ namespace KalevaAalto
             rng.Style.Font.Name = @"黑体";
             rng.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
             rng.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+           
+
+            
             for (int j = 0; j < columnsCount; j++)
             {
                 SugarColumnInfo column = sugarColumnInfos[j];
@@ -1336,7 +1339,7 @@ namespace KalevaAalto
 
 
             #region 添加数据
-            for (int i = 0; i < rowsCount && i < rowsCount; i++)
+            for (int i = 0; i < rowsCount; i++)
             {
                 T row = values[i];
                 for (int j = 0; j < columnsCount; j++)
@@ -1344,7 +1347,7 @@ namespace KalevaAalto
                     SugarColumnInfo column = sugarColumnInfos[j];
                     PropertyInfo propertyInfo = valueType.GetProperty(column.propertyName)!;
                     object? obj = propertyInfo.GetValue(row);
-                    cell = worksheet.Cells[startRow + i, serCol + j];
+                    ExcelRange cell = worksheet.Cells[startRow + i, serCol + j];
                     if (obj is null)
                     {
                         if (column.type.IsOrNullableNumber())
@@ -1359,14 +1362,13 @@ namespace KalevaAalto
                 }
             }
             #endregion
-
-
             #region 添加边框
             rng = worksheet.Cells[titleRow, serCol, titleRow + System.Math.Max(rowsCount, 1), serCol + columnsCount - 1];
-            ExcelTable table = worksheet.Tables.Add(rng, tableName);// 将数据范围转换为Excel表格
+            _ = worksheet.Tables.Add(rng, tableName);// 将数据范围转换为Excel表格
             rng.Style.Font.Size = 11;//设置字体大小
             rng.Style.WrapText = true;//自动换行
             #endregion
+            
 
             return worksheet;
         }
