@@ -1387,29 +1387,36 @@ namespace KalevaAalto
         /// </summary>
         /// <typeparam name="T">数组类型</typeparam>
         /// <param name="dataTable">要转化的DataTable</param>
-        public static T[] ToArray<T>(this DataTable dataTable) where T : class, new()
+        public static async Task<T[]> ToArray<T>(this DataTable dataTable) where T : class, new()
         {
             Type objType = typeof(T);
             SugarColumnInfo[] sugarColumnInfos = objType.GetSugarColumns();
             HashSet<string> dataTableColumns = dataTable.Columns.Cast<DataColumn>().Select(iterator => iterator.ColumnName).ToHashSet();
+            List<Task> tasks = new List<Task>();
 
             List<T> result = new List<T>();
             foreach (DataRow row in dataTable.Rows)
             {
-                T obj = new T();
-                foreach (var column in sugarColumnInfos)
+                DataRow _row = row;
+                tasks.Add(Task.Run(() =>
                 {
-                    if (dataTableColumns.Contains(column.columnName))
+                    T obj = new T();
+                    foreach (var column in sugarColumnInfos)
                     {
-                        DataColumn dataColumn = dataTable.Columns[column.columnName]!;
-                        PropertyInfo propertyInfo = objType.GetProperty(column.propertyName)!;
-                        object? valueSource = row[column.columnName];
-                        object? value = column.type.TypeParse(valueSource);
-                        propertyInfo.SetValue(obj, value);
+                        if (dataTableColumns.Contains(column.columnName))
+                        {
+                            DataColumn dataColumn = dataTable.Columns[column.columnName]!;
+                            PropertyInfo propertyInfo = objType.GetProperty(column.propertyName)!;
+                            object? valueSource = _row[column.columnName];
+                            object? value = column.type.TypeParse(valueSource);
+                            propertyInfo.SetValue(obj, value);
+                        }
                     }
-                }
-                result.Add(obj);
+                    result.Add(obj);
+                }));
             }
+
+            await Task.WhenAll(tasks);
 
             return result.ToArray();
         }
