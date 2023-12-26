@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -17,6 +18,16 @@ namespace KalevaAalto
         {
             return type.IsClass || type.IsArray || (type.IsValueType && type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>));
         }
+
+
+        public static object? GetValue(this Type type,object? obj)
+        {
+            return new ObjectConvert(type).GetValue(obj);
+        }
+
+
+        
+
 
 
         private readonly static HashSet<Type> standardDataTableType = new HashSet<Type> { 
@@ -334,280 +345,6 @@ namespace KalevaAalto
                 || type.IsNullableUInteger()
                 || type.IsNullableFloat()
                 || type.IsNullableDecimal();
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-        public readonly static Regex regexNumber = new Regex(@"(?<decimal>(?<int>[\-]?(?<uint>\d+))(\.\d+)?)");
-        public readonly static Regex regexTrue = new Regex(@"[Tt]([Rr][Uu][Ee])?");
-        public readonly static Regex regexFalse = new Regex(@"[Ff]([Aa][Ll][Ss][Ee])?");
-
-
-        public readonly static Dictionary<Type, object?> numberZero = new Dictionary<Type, object?> 
-        {
-            { typeof(short) , (short)0 },
-            { typeof(short?) , null },
-            { typeof(int) , 0 },
-            { typeof(int?) , null },
-            { typeof(long) , 0L },
-            { typeof(long?) , null },
-
-            { typeof(byte) , (byte)0 },
-            { typeof(byte?) , null },
-            { typeof(ushort) , (ushort)0 },
-            { typeof(ushort?) , null },
-            { typeof(uint) , 0U },
-            { typeof(uint?) , null },
-            { typeof(ulong) , 0UL },
-            { typeof(ulong?) , null },
-
-            { typeof(float) , 0.0F },
-            { typeof(float?) , null },
-            { typeof(double) , 0.0D },
-            { typeof(double?) , null },
-
-            { typeof(decimal) , 0.0M },
-            { typeof(decimal?) , null },
-
-            { typeof(bool) , false },
-            { typeof(bool?) , false },
-
-            { typeof(char), (char)0 },
-            { typeof(char?), null },
-
-            { typeof(DateTime), DateTime.MinValue },
-            { typeof(DateTime?), null },
-        };
-
-
-        public static object? TypeParse(this Type type,object? objSource)
-        {
-            if(objSource is null)
-            {
-                return numberZero.ContainsKey(type) ? numberZero[type] : null;
-            }
-
-            Type objSourceType = objSource.GetType();
-            if(objSourceType == type)
-            {
-                return objSource;
-            }
-
-            if (type.IsOrNullableNumber())
-            {
-                if (!objSourceType.IsOrNullableNumber())
-                {
-                    string? objSourceString = objSource.ToString();
-                    if (string.IsNullOrEmpty(objSourceString))
-                    {
-                        return numberZero[type];
-                    }
-                    Match match = regexNumber.Match(objSourceString);
-                    if (!match.Success)
-                    {
-                        return numberZero[type];
-                    }
-
-                    if (type.IsOrNullableUInteger())
-                    {
-                        objSource = match.Groups[@"uint"].Value;
-                    }
-                    else if (type.IsOrNullableInteger())
-                    {
-                        objSource = match.Groups[@"int"].Value;
-                    }
-                    else
-                    {
-                        objSource = match.Groups[@"decimal"].Value;
-                    }
-
-
-                }
-
-                if(type == typeof(byte) || type == typeof(byte?))
-                {
-                    return System.Convert.ToByte(objSource);
-                }
-                else if (type == typeof(ushort) || type == typeof(ushort?))
-                {
-                    return System.Convert.ToUInt16(objSource);
-                }
-                else if (type == typeof(uint) || type == typeof(uint?))
-                {
-                    return System.Convert.ToUInt32(objSource);
-                }
-                else if (type == typeof(ulong) || type == typeof(ulong?))
-                {
-                    return System.Convert.ToUInt64(objSource);
-                }
-                else if (type == typeof(short) || type == typeof(short?))
-                {
-                    return System.Convert.ToInt16(objSource);
-                }
-                else if (type == typeof(int) || type == typeof(int?))
-                {
-                    return System.Convert.ToInt32(objSource);
-                }
-                else if (type == typeof(long) || type == typeof(long?))
-                {
-                    return System.Convert.ToInt64(objSource);
-                }
-                else if (type == typeof(float) || type == typeof(float?))
-                {
-                    return System.Convert.ToSingle(objSource);
-                }
-                else if (type == typeof(double) || type == typeof(double?))
-                {
-                    return System.Convert.ToDouble(objSource);
-                }
-                else if (type == typeof(decimal) || type == typeof(decimal?))
-                {
-                    return System.Convert.ToDecimal(objSource);
-                }
-            }
-
-            if (type.IsOrNullableBool())
-            {
-                if (objSourceType.IsOrNullableInteger())
-                {
-                    return !(System.Convert.ToInt64(objSource) == 0L);
-                }
-                else if (objSourceType.IsOrNullableUInteger())
-                {
-                    return !(System.Convert.ToUInt64(objSource) == 0UL);
-                }
-                else if (objSourceType.IsOrNullableFloat())
-                {
-                    return !(System.Convert.ToDouble(objSource) == 0.0D);
-                }
-                else if (objSourceType.IsOrNullableDecimal())
-                {
-                    return !(System.Convert.ToDecimal(objSource) == 0.0M);
-                }
-                else if (objSourceType.IsOrNullableChar())
-                {
-                    return !(System.Convert.ToChar(objSource) == (char)0);
-                }
-                else if (objSourceType.IsOrNullableChar())
-                {
-                    return !(System.Convert.ToChar(objSource) == (char)0);
-                }
-                else if (objSourceType.IsString())
-                {
-                    string? objSourceString = objSource.ToString();
-                    if(!string.IsNullOrEmpty(objSourceString) && regexTrue.IsMatch(objSourceString))
-                    {
-                        return true;
-                    }
-                    else if (type.IsNullableBool())
-                    {
-                        if(!string.IsNullOrEmpty(objSourceString) && regexFalse.IsMatch(objSourceString))
-                        {
-                            return false;
-                        }
-                        else
-                        {
-                            return null;
-                        }
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    if (type.IsNullableBool())
-                    {
-                        return null;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-
-            }
-
-            if (type.IsOrNullableChar())
-            {
-                string? objSourceString = objSource.ToString();
-                if (string.IsNullOrEmpty(objSourceString))
-                {
-                    if (type.IsChar())
-                    {
-                        return (char)0;
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                }
-                else
-                {
-                    return objSourceString[0];
-                }
-            }
-
-            if (type.IsOrNullableDateTime())
-            {
-                if (objSourceType.IsOrNullableNumber())
-                {
-                    double addValue = System.Convert.ToDouble(objSource);
-                    if (addValue < 0)
-                    {
-                        return numberZero[type];
-                    }
-                    else
-                    {
-                        return DateTime.MinValue.AddDays(addValue);
-                    }
-                }
-                else if (objSourceType.IsOrNullableDateTime())
-                {
-                    return System.Convert.ToDateTime(objSource);
-                }
-                else
-                {
-                    string? objSourceString = objSource.ToString();
-
-                    if (string.IsNullOrEmpty(objSourceString))
-                    {
-                        return numberZero[type];
-                    }
-                    else
-                    {
-                        DateTime? dateTime = objSourceString.GetDateTime();
-                        if(dateTime is null)
-                        {
-                            return numberZero[type];
-                        }
-                        else
-                        {
-                            return dateTime;
-                        }
-                    }
-                }
-                
-            }
-
-            if (type.IsString())
-            {
-                return objSource.ToString();
-            }
-
-
-
-            return null;
         }
 
 

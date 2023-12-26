@@ -76,7 +76,7 @@ namespace KalevaAalto
         }
 
 
-        public static DateTime currentMonth
+        public static DateTime CurrentMonth
         {
             get
             {
@@ -108,81 +108,6 @@ namespace KalevaAalto
                 throw new Exception($"“{monthString}”不是合法的月份字符串；");
             }
         }
-
-
-
-        private static string[] dateStringFormats = {
-                @"yyyy-MM-dd HH:mm:ss",
-                @"yyyy-M-d H:m:s",
-                @"yyyy-MM-dd HH:mm",
-                @"yyyy-M-d H:m",
-                @"yyyy/MM/dd HH:mm:ss",
-                @"yyyy/M/d H:m:s",
-                @"yyyy/MM/dd HH:mm",
-                @"yyyy/M/d H:m",
-                @"yyyy年MM月dd日 HH时mm分ss秒",
-                @"yyyy年M月d日 H时m分s秒",
-                @"yyyy年MM月dd日 HH时mm分",
-                @"yyyy年M月d日 H时m分",
-
-
-                @"yyyy-MM-dd",
-                @"yyyy-M-d",
-                @"yyyy-MM",
-                @"yyyy-M",
-                @"yyyy/MM/dd",
-                @"yyyy/M/d",
-                @"yyyy/MM",
-                @"yyyy/M",
-                @"yyyy年MM月dd日",
-                @"yyyy年M月d日",
-                @"yyyy年MM月",
-                @"yyyy年M月",
-
-                @"HH:mm:ss",
-                @"H:m:s",
-                @"HH:mm",
-                @"H:m",
-                @"HH时mm分ss秒",
-                @"H时m分s秒",
-                @"HH时mm分",
-                @"H时m分",
-
-                @"yyyyMMddHHmmss",
-                @"yyyyMMddHHmm",
-                @"yyyyMMdd",
-                @"yyyyMM",
-
-            };
-
-
-
-        public static DateTime? GetDateTime(this string dateString)
-        {
-            if (DateTime.TryParseExact(dateString, dateStringFormats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime result))
-            {
-                return result;
-            }
-
-            Match match = regexNumber.Match(dateString);
-            if (match.Success)
-            {
-                return DateTime.MinValue.AddDays(System.Convert.ToDouble(match.Groups[@"decimal"].Value));
-            }
-
-
-
-            return null;
-        }
-
-
-
-
-
-
-
-
-
 
 
 

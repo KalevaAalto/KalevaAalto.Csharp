@@ -1411,7 +1411,7 @@ namespace KalevaAalto
                             DataColumn dataColumn = dataTable.Columns[column.columnName]!;
                             PropertyInfo propertyInfo = objType.GetProperty(column.propertyName)!;
                             object? valueSource = _row[column.columnName];
-                            object? value = column.type.TypeParse(valueSource);
+                            object? value = column.type.GetValue(valueSource);
                             propertyInfo.SetValue(obj, value);
                         }
                     }

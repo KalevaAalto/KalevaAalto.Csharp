@@ -43,6 +43,28 @@ namespace KalevaAalto
             }
         }
 
+        public static string? GetString(object? obj)
+        {
+            return (string?)typeof(string).GetValue(obj);
+        }
+
+
+        public static int GetInt32(object? obj)
+        {
+            return (int)typeof(int).GetValue(obj)!;
+        }
+
+        public static decimal GetDecimal(object? obj)
+        {
+            return (decimal)typeof(decimal).GetValue(obj)!;
+        }
+
+        public static DateTime GetDateTime(object? obj)
+        {
+            return (DateTime)typeof(DateTime).GetValue(obj)!;
+        }
+
+
         public object? GetValue(object? obj)
         {
             if(obj is null)
