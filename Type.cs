@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -17,6 +18,16 @@ namespace KalevaAalto
         {
             return type.IsClass || type.IsArray || (type.IsValueType && type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>));
         }
+
+
+        public static object? GetValue(this Type type,object? obj)
+        {
+            return new ObjectConvert(type).GetValue(obj);
+        }
+
+
+        
+
 
 
         private readonly static HashSet<Type> standardDataTableType = new HashSet<Type> { 
