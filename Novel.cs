@@ -494,7 +494,7 @@ namespace KalevaAalto
         public static Novel LoadNovelFromTxt(string fileName,string pattern = @"第\d+章\-.*")
         {
             FileNameInfo fileNameInfo = new FileNameInfo(fileName);
-            return new Novel(fileNameInfo.name, GetStringFromFile(fileName), pattern);
+            return new Novel(fileNameInfo.Name, GetStringFromFile(fileName), pattern);
         }
 
 
@@ -520,7 +520,7 @@ namespace KalevaAalto
         /// <returns>返回程序是否运行</returns>
         public bool SaveAsXml(string path)
         {
-            this.xml.Save(new Main.FileNameInfo(path,this.name,@"xml").fileName);
+            this.xml.Save(new Main.FileNameInfo(path,this.name,@"xml").FileName);
             return true;
         }
 
@@ -686,7 +686,7 @@ namespace KalevaAalto
         {
             XmlDocument xml = new XmlDocument();
             xml.Load(fileName);
-            return LoadNovelFromXml(xml,new Main.FileNameInfo(fileName).name);
+            return LoadNovelFromXml(xml,new Main.FileNameInfo(fileName).Name);
         }
 
 
@@ -976,7 +976,7 @@ namespace KalevaAalto
             Main.FileNameInfo fileNameInfo = new Main.FileNameInfo(path,this.name,@"epub");
             // 这里你可以将数据写入到 memoryStream 中，例如使用 memoryStream.Write 方法
             // 将MemoryStream的内容写入文件
-            File.WriteAllBytes(fileNameInfo.fileName, this.epub);
+            File.WriteAllBytes(fileNameInfo.FileName, this.epub);
             return true;
 
         }
@@ -992,21 +992,21 @@ namespace KalevaAalto
 
             
             //检查后缀名是否为epub
-            if (!fileNameInfo.status || fileNameInfo.suffix != @"epub")
+            if (!fileNameInfo.Status || fileNameInfo.Suffix != @"epub")
             {
                 throw new Exception(@"请选择epub文件！");
             }
 
             //检查文件是否存在
-            if (!fileNameInfo.exists)
+            if (!fileNameInfo.Exists)
             {
-                throw new Exception($"文件“{fileNameInfo.fileName}”不存在！");
+                throw new Exception($"文件“{fileNameInfo.FileName}”不存在！");
             }
 
             
             try
             {
-                return LoadNovelFromEpub(ZipFile.OpenRead(fileNameInfo.fileName),fileNameInfo.name);
+                return LoadNovelFromEpub(ZipFile.OpenRead(fileNameInfo.FileName),fileNameInfo.Name);
             }
             catch(Exception ex)
             {
@@ -1109,7 +1109,7 @@ namespace KalevaAalto
 
                     if (hrefAttribute is not null)
                     {
-                        string herfFileName = contentOpfFileNameInfo.path + contentOpfFileNameInfo.sign + hrefAttribute.Value.ToLower();
+                        string herfFileName = contentOpfFileNameInfo.Path + contentOpfFileNameInfo.Sign + hrefAttribute.Value.ToLower();
                         if (zipArchiveEntrys.ContainsKey(herfFileName))
                         {
                             herfs.Add(herfFileName);

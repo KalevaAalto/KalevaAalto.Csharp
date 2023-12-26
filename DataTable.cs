@@ -15,6 +15,7 @@ using System.Xml;
 using NetTaste;
 using System.Text.RegularExpressions;
 using System.Drawing;
+using KalevaAalto.Models.Excel;
 
 namespace KalevaAalto
 {
@@ -22,52 +23,21 @@ namespace KalevaAalto
     {
 
         
+
+
+
+
+
         public static Dictionary<TKey, int> ToSortDictionary<TKey>(this TKey[] values) where TKey : notnull
         {
             return values.Select((item, index) => new { item, index }).ToDictionary(it => it.item, it => it.index);
         }
 
-        /// <summary>
-        /// SqlSugar类的信息暂存类
-        /// </summary>
-        public class SugarColumnInfo
-        {
-            public string columnName { get; set; } = string.Empty;
-            public string propertyName { get; set; } = string.Empty;
-            public System.Type type { get; set; } = typeof(string);
-
-            public ExcelDataColumn excelDataColumn
-            {
-                get
-                {
-                    return new ExcelDataColumn(this.columnName,this.type);
-                }
-            }
-        }
 
 
 
-        public static SugarColumnInfo[] GetSugarColumns(this Type entityType)
-        {
-            List<SugarColumnInfo> result = new List<SugarColumnInfo>();
 
-            PropertyInfo[] properties = entityType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-
-            foreach (PropertyInfo property in properties.Where(it => it.PropertyType.IsStandardDataTableType()))
-            {
-                var sugarColumnAttribute = property.GetCustomAttribute<SugarColumn>(inherit: true);
-                if (sugarColumnAttribute is not null && !sugarColumnAttribute.ColumnName.IsNullOrEmpty())
-                {
-                    result.Add(new SugarColumnInfo { columnName = sugarColumnAttribute.ColumnName, propertyName = property.Name, type = property.PropertyType });
-                }
-                else
-                {
-                    result.Add(new SugarColumnInfo { columnName = property.Name,propertyName = property.Name,type=property.PropertyType });
-                }
-            }
-
-            return result.ToArray();
-        }
+        
 
 
 
@@ -492,305 +462,16 @@ namespace KalevaAalto
                     return i;
                 }
             }
-            return notfound;
+            return Notfound;
         }
 
 
 
-        /// <summary>
-        /// 将数组转化为DataTable数据表
-        /// </summary>
-        /// <typeparam name="T">数组的数据类型</typeparam>
-        /// <param name="values">要转化的数组</param>
-        /// <param name="tableName">表名</param>
-        /// <returns>返回DataTable数据表</returns>
-        public static DataTable ToDataTable<T>(T[] values,string tableName = emptyString)
-        {
-            DataTable result = new DataTable(tableName);
-
-            Type valueType = typeof(T);
-            SugarColumnInfo[] sugarColumnInfos = valueType.GetSugarColumns();
-
-            //添加字段名称
-            foreach(var column in sugarColumnInfos)
-            {
-                result.Columns.Add(column.columnName, column.type);
-            }
-
-            //添加数据
-            foreach(var value in values)
-            {
-                DataRow row = result.Rows.Add();
-                foreach (var column in sugarColumnInfos)
-                {
-                    PropertyInfo propertyInfo = valueType.GetProperty(column.propertyName)!;
-                    object? obj = propertyInfo.GetValue(value);
-                    if(obj is null)
-                    {
-                        row[column.columnName] = DBNull.Value;
-                    }
-                    else
-                    {
-                        row[column.columnName] = obj;
-                    }
-                }
-            }
-
-            return result;
-        }
 
 
 
-        #region ExcelDataColumn
-
-        /// <summary>
-        /// 包含成员列名、水平对齐、垂直对齐、宽度、数字格式、是否汇总
-        /// </summary>
-        public class ExcelDataColumn
-        {
-            public string columnName { get;private set; }
-
-            private ExcelHorizontalAlignment? _horizontalAlignment = null;
-            public ExcelHorizontalAlignment horizontalAlignment
-            {
-                get
-                {
-                    if(this._horizontalAlignment is null)
-                    {
-                        if (this.type.IsNumber())
-                        {
-                            return ExcelHorizontalAlignment.Right;
-                        }
-                        else if (this.type.IsByteArray())
-                        {
-                            return ExcelHorizontalAlignment.Left;
-                        }
-                        else
-                        {
-                            return ExcelHorizontalAlignment.Center;
-                        }
-                    }
-                    else
-                    {
-                        return this._horizontalAlignment.Value;
-                    }
-                }
-                set
-                {
-                    this._horizontalAlignment = value;
-                }
-            }
-            private ExcelVerticalAlignment? _verticalAlignment = null;
-            public ExcelVerticalAlignment verticalAlignment
-            {
-                get
-                {
-                    if(this._verticalAlignment is null)
-                    {
-                        return ExcelVerticalAlignment.Center;
-                    }
-                    else
-                    {
-                        return this._verticalAlignment.Value;
-                    }
-                }
-                set
-                {
-                    this._verticalAlignment = value;
-                }
-            }
-            private int? _width = null;
-            public int width
-            {
-                get
-                {
-                    if(this._width is null)
-                    {
-
-                        if (type.IsOrNullableChar() || type == typeof(byte) || type == typeof(byte?))
-                        {
-                            return 6;
-                        }
-                        else if (type.IsOrNullableBool())
-                        {
-                            return 8;
-                        }
-                        else if (type.IsOrNullableNumber() || type.IsOrNullableDateTime())
-                        {
-                            return 12;
-                        }
-                        else if (type.IsByteArray())
-                        {
-                            return 30;
-                        }
-                        else
-                        {
-                            return 10;
-                        }
-                    }
-                    else
-                    {
-                        return this._width.Value.Around(6,100);
-                    }
-                }
-                set
-                {
-                    this._width = value;
-                }
-            }
-
-            private string? _numberFormat = null;
-            public string numberFormat 
-            {
-                get
-                {
-                    if(this._numberFormat is null)
-                    {
-                        if (this.type.IsOrNullableInteger() || this.type.IsOrNullableUInteger())
-                        {
-                            return NumberFormat.Int;
-                        }
-                        else if(this.type.IsOrNullableFloat() || this.type.IsOrNullableDecimal())
-                        {
-                            return NumberFormat.Decimal;
-                        }
-                        else if (this.type.IsOrNullableDateTime())
-                        {
-                            return NumberFormat.Date;
-                        }
-                        else
-                        {
-                            return string.Empty;
-                        }
-                    }
-                    else
-                    {
-                        return this._numberFormat;
-                    }
-                }
-                set
-                {
-                    this._numberFormat = value;
-                }
-            
-            }
 
 
-            public Color fontColor { get; set; } = Color.Black;
-
-            public bool isAddFoot { get; set; } = false;
-            public Type type { get;private set; }
-            public ExcelDataColumn(string columnName,Type type)
-            {
-                this.columnName = columnName; 
-                this.type = type;
-            }
-            public static class NumberFormat
-            {
-
-                public const string Normal = @"@";
-                public const string Int = @"#,##0";
-                public const string Decimal = @"#,##0.00";
-
-                public static string GetDecimal(int count)
-                {
-                    if (count <= 0)
-                    {
-                        return Int;
-                    }
-
-                    return @"#,##0." + new string('0', count);
-
-                }
-
-                public const string DateTime = @"yyyy-MM-dd HH:mm:ss";
-                public const string ChineseDateTime = @"yyyy年MM月dd日HH时mm分ss秒";
-                public const string Date = @"yyyy-MM-dd";
-                public const string ChineseDate = @"yyyy年MM月dd日";
-                public const string Time = @"HH:mm:ss";
-                public const string ChineseTime = @"HH时mm分ss秒";
-
-                
-                public const string Percent = @"0.00%";
-
-                public static string GetPercent(int count)
-                {
-                    if (count <= 0)
-                    {
-                        return @"0%";
-                    }
-                    return @"0." + new string('0', count) + '%';
-
-                }
-
-
-            }
-
-            
-        }
-        public static string ToString(this ExcelHorizontalAlignment excelHorizontalAlignment)
-        {
-            switch (excelHorizontalAlignment)
-            {
-                case ExcelHorizontalAlignment.Left:
-                    return @"left";
-                case ExcelHorizontalAlignment.Right:
-                    return @"right";
-                default:
-                    return @"center";
-            }
-        }
-        public static Dictionary<string, ExcelDataColumn> ToDictionary(this ExcelDataColumn[]? excelDataColumns)
-        {
-            Dictionary<string, ExcelDataColumn> result = new Dictionary<string, ExcelDataColumn>();
-            if (excelDataColumns is not null)
-            {
-                foreach (var item in excelDataColumns)
-                {
-                    result[item.columnName] = item;
-                }
-            }
-
-
-            return result;
-        }
-        public static ExcelDataColumn[] GetExcelDataColumns(this Type type, ExcelDataColumn[]? outExcelDataColumns = null)
-        {
-            List<ExcelDataColumn> result = new List<ExcelDataColumn>();
-            if (outExcelDataColumns is not null)
-            {
-                result.AddRange(outExcelDataColumns);
-            }
-
-            PropertyInfo? staticPropertyInfo = type.GetProperty(@"excelDataColumns", BindingFlags.Static | BindingFlags.Public);
-            if (staticPropertyInfo is not null)
-            {
-                object? value = staticPropertyInfo.GetValue(null);
-                if (value is ExcelDataColumn[] excelDataColumns)
-                {
-                    result.AddRange(excelDataColumns.Where(iter => !result.Any(it => it.columnName == iter.columnName)).ToArray());
-                }
-            }
-
-
-            SugarColumnInfo[] sugarColumnInfos = type.GetSugarColumns();
-            result.AddRange(sugarColumnInfos.Where(iter => !result.Any(it => it.columnName == iter.columnName)).Select(it => it.excelDataColumn).ToArray());
-
-            return result.ToArray();
-        }
-        public static ExcelDataColumn[] GetExcelDataColumns(this DataTable dataTable, ExcelDataColumn[]? outExcelDataColumns = null)
-        {
-            List<ExcelDataColumn> result = new List<ExcelDataColumn>();
-            if (outExcelDataColumns is not null)
-            {
-                result.AddRange(outExcelDataColumns);
-            }
-            DataColumn[] dataColumns = dataTable.Columns.Cast<DataColumn>().ToArray();
-            result.AddRange(dataColumns.Where(iter => !result.Any(it => it.columnName == iter.ColumnName)).Select(it => new ExcelDataColumn(it.ColumnName,it.DataType)).ToArray());
-
-            return result.ToArray();
-        }
-        #endregion
 
 
         #region ToHtml
@@ -896,7 +577,7 @@ namespace KalevaAalto
             }
             return innerString;
         }
-
+        /*
         public static XmlDocument ToHtml(this DataTable dataTable, ExcelDataColumn[]? excelDataColumns = null, string? styleString = null, bool isFrezzon = false)
         {
             string subName = @"将表格转化为XML文档";
@@ -925,7 +606,7 @@ namespace KalevaAalto
                 {
                     return false;
                 }
-                return excelDataColumnsDic[it.Key].isAddFoot;
+                return excelDataColumnsDic[it.Key].IsAddFoot;
             })
                 .Select(it => it.Key)
                 .ToHashSet();
@@ -964,10 +645,10 @@ namespace KalevaAalto
                     ExcelDataColumn excelDataColumn = excelDataColumnsDic[columnName];
 
                     //设定对齐方式
-                    tdElement.SetAttribute(@"align", excelDataColumn.horizontalAlignment.ToString());
+                    tdElement.SetAttribute(@"align", excelDataColumn.HorizontalAlignment.ToString());
 
                     //录入数据
-                    tdElement.InnerText = type.GetInnerText(row[columnName], excelDataColumn.numberFormat);
+                    tdElement.InnerText = type.GetInnerText(row[columnName], excelDataColumn.NumberFormat);
                 }
             }
             #endregion
@@ -1002,7 +683,7 @@ namespace KalevaAalto
                             tdElement.SetAttribute(@"class", @"fw-bold");
 
                             //设定对齐方式
-                            tdElement.SetAttribute(@"align", excelDataColumn.horizontalAlignment.ToString());
+                            tdElement.SetAttribute(@"align", excelDataColumn.HorizontalAlignment.ToString());
 
 
                             #region 添加数据
@@ -1013,7 +694,7 @@ namespace KalevaAalto
                                     var obj = it[columnName];
                                     return System.Convert.ToInt64(obj);
                                 });
-                                tdElement.InnerText = sum.ToString(excelDataColumn.numberFormat);
+                                tdElement.InnerText = sum.ToString(excelDataColumn.NumberFormat);
                             }
                             else if (type.IsOrNullableFloat())
                             {
@@ -1022,7 +703,7 @@ namespace KalevaAalto
                                     var obj = it[columnName];
                                     return System.Convert.ToDouble(obj);
                                 });
-                                tdElement.InnerText = sum.ToString(excelDataColumn.numberFormat);
+                                tdElement.InnerText = sum.ToString(excelDataColumn.NumberFormat);
                             }
                             else if (type.IsOrNullableDecimal())
                             {
@@ -1031,7 +712,7 @@ namespace KalevaAalto
                                     var obj = it[columnName];
                                     return System.Convert.ToDecimal(obj);
                                 });
-                                tdElement.InnerText = sum.ToString(excelDataColumn.numberFormat);
+                                tdElement.InnerText = sum.ToString(excelDataColumn.NumberFormat);
                             }
                             #endregion
 
@@ -1067,7 +748,7 @@ namespace KalevaAalto
             #region
             XmlDocument result = new XmlDocument();
             SugarColumnInfo[] sugarColumnInfos = valueType.GetSugarColumns();
-            Dictionary<string, ExcelDataColumn> excelDataColumnsDic = valueType.GetExcelDataColumns(excelDataColumns).ToDictionary();
+            Dictionary<string, ExcelDataColumn> excelDataColumnsDic = valueType.GetDataColumnStyles(excelDataColumns).ToDictionary();
             HashSet<string> addFootColumnsHash = sugarColumnInfos
                 .Where(it =>
                 {
@@ -1079,7 +760,7 @@ namespace KalevaAalto
                     {
                         return false;
                     }
-                    return excelDataColumnsDic[it.columnName].isAddFoot;
+                    return excelDataColumnsDic[it.columnName].IsAddFoot;
                 })
                 .Select(it => it.columnName)
                 .ToHashSet();
@@ -1118,11 +799,11 @@ namespace KalevaAalto
                     ExcelDataColumn excelDataColumn = excelDataColumnsDic[columnName];
 
                     //设定对齐方式
-                    tdElement.SetAttribute(@"align", excelDataColumn.horizontalAlignment.ToString());
+                    tdElement.SetAttribute(@"align", excelDataColumn.HorizontalAlignment.ToString());
 
                     //录入数据
                     PropertyInfo propertyInfo = valueType.GetProperty(column.propertyName)!;
-                    tdElement.InnerText = type.GetInnerText(propertyInfo.GetValue(row), excelDataColumn.numberFormat);
+                    tdElement.InnerText = type.GetInnerText(propertyInfo.GetValue(row), excelDataColumn.NumberFormat);
                 }
             }
             #endregion
@@ -1157,7 +838,7 @@ namespace KalevaAalto
                             tdElement.SetAttribute(@"class", @"fw-bold");
 
                             //设定对齐方式
-                            tdElement.SetAttribute(@"align", excelDataColumn.horizontalAlignment.ToString());
+                            tdElement.SetAttribute(@"align", excelDataColumn.HorizontalAlignment.ToString());
 
                             #region 添加数据
                             PropertyInfo propertyInfo = valueType.GetProperty(column.propertyName)!;
@@ -1168,7 +849,7 @@ namespace KalevaAalto
                                     object? obj = propertyInfo.GetValue(it);
                                     return System.Convert.ToInt64(obj);
                                 });
-                                tdElement.InnerText = sum.ToString(excelDataColumn.numberFormat);
+                                tdElement.InnerText = sum.ToString(excelDataColumn.NumberFormat);
                             }
                             else if (type.IsOrNullableFloat())
                             {
@@ -1177,7 +858,7 @@ namespace KalevaAalto
                                     object? obj = propertyInfo.GetValue(it);
                                     return System.Convert.ToDouble(obj);
                                 });
-                                tdElement.InnerText = sum.ToString(excelDataColumn.numberFormat);
+                                tdElement.InnerText = sum.ToString(excelDataColumn.NumberFormat);
                             }
                             else if (type.IsOrNullableDecimal())
                             {
@@ -1187,7 +868,7 @@ namespace KalevaAalto
                                     object? obj = propertyInfo.GetValue(it);
                                     return System.Convert.ToDecimal(obj);
                                 });
-                                tdElement.InnerText = sum.ToString(excelDataColumn.numberFormat);
+                                tdElement.InnerText = sum.ToString(excelDataColumn.NumberFormat);
                             }
                             #endregion
                         }
@@ -1202,227 +883,13 @@ namespace KalevaAalto
 
             workflow.End();
             return result;
-        }
-        #endregion
-
-
-        #region ToExcelWorksheet
-        public static ExcelWorksheet ToExcelWorksheet(this DataTable dataTable, ExcelPackage package, ExcelDataColumn[]? excelDataColumns = null)
-        {
-
-            #region 数据准备
-            string tableName = string.IsNullOrEmpty(dataTable.TableName) ? @"数据源" : dataTable.TableName;
-            Dictionary<string, Type> columns = dataTable.Columns.Cast<DataColumn>().ToDictionary(it => it.ColumnName, it => it.DataType);
-            Dictionary<string, ExcelDataColumn> excelDataColumnsDic = excelDataColumns.ToDictionary();
-            foreach (var column in columns)
-            {
-                ExcelDataColumn excelDataColumn = excelDataColumnsDic.ContainsKey(column.Key) ?
-                    excelDataColumnsDic[column.Key] : new ExcelDataColumn(column.Key, column.Value);
-                excelDataColumnsDic[column.Key] = excelDataColumn;
-            }
-            ExcelWorksheet worksheet = package.Workbook.Worksheets.Add(tableName);
-            int titleRow = 1, startRow = 2, serCol = 1, rowsCount = dataTable.Rows.Count, columnsCount = dataTable.Columns.Count;
-            ExcelRange rng, cell;
-            #endregion
-
-
-            #region 录入字段
-            rng = worksheet.Cells[titleRow, serCol, titleRow, serCol + columnsCount - 1];
-            rng.Style.Font.Bold = true;
-            rng.Style.Font.Name = @"黑体";
-            rng.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-            rng.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
-            for (int j = 0; j < columnsCount; j++)
-            {
-                DataColumn column = dataTable.Columns[j];
-                cell = worksheet.Cells[titleRow, serCol + j];
-                rng = worksheet.Cells[titleRow + 1, serCol + j, titleRow + System.Math.Max(rowsCount, 1), serCol + j];
-                ExcelDataColumn excelDataColumn = excelDataColumnsDic[column.ColumnName];
-                System.Type type = column.DataType;
-
-                cell.Value = excelDataColumn.columnName;
-                rng.Style.Font.Name = @"宋体";
-                rng.Style.Font.Bold = false;
-                rng.Style.Numberformat.Format = excelDataColumn.numberFormat;
-                rng.Style.HorizontalAlignment = excelDataColumn.horizontalAlignment;
-                rng.Style.VerticalAlignment = excelDataColumn.verticalAlignment;
-                worksheet.Columns[serCol + j].Width = excelDataColumn.width.Around(6, 30);
-
-
-            }
-            #endregion
-
-
-
-
-            #region 添加数据
-            for (int i = 0; i < rowsCount && i < rowsCount; i++)
-            {
-                DataRow row = dataTable.Rows[i];
-                for (int j = 0; j < columnsCount; j++)
-                {
-                    cell = worksheet.Cells[startRow + i, serCol + j];
-                    if (row[j] is null || row[j] is DBNull)
-                    {
-                        System.Type type = dataTable.Columns[j].DataType;
-                        if (type.IsOrNullableNumber())
-                        {
-                            cell.Value = 0M;
-                        }
-                    }
-                    else
-                    {
-                        cell.Value = row[j];
-                    }
-                }
-            }
-            #endregion
-
-
-            #region 添加边框
-            rng = worksheet.Cells[titleRow, serCol, titleRow + System.Math.Max(rowsCount, 1), serCol + columnsCount - 1];
-            ExcelTable table = worksheet.Tables.Add(rng, tableName);// 将数据范围转换为Excel表格
-            rng.Style.Font.Size = 11;//设置字体大小
-            rng.Style.WrapText = true;//自动换行
-            #endregion
-
-            return worksheet;
-
-        }
-
-
-        public static ExcelWorksheet ToExcelWorksheet<T>(this T[] values, ExcelPackage package, string tableName = emptyString, ExcelDataColumn[]? excelDataColumns = null)
-        {
-            #region 数据准备
-            Type valueType = typeof(T);
-            tableName = string.IsNullOrEmpty(tableName) ? valueType.GetSugarTableName() : tableName;
-            SugarColumnInfo[] sugarColumnInfos = valueType.GetSugarColumns();
-            Dictionary<string, ExcelDataColumn> excelDataColumnsDic = excelDataColumns.ToDictionary();
-            foreach (var column in sugarColumnInfos)
-            {
-                ExcelDataColumn excelDataColumn = excelDataColumnsDic.ContainsKey(column.columnName) ?
-                    excelDataColumnsDic[column.columnName] : column.excelDataColumn;
-                excelDataColumnsDic[column.columnName] = excelDataColumn;
-            }
-            ExcelWorksheet worksheet = package.Workbook.Worksheets.Add(tableName);
-            ExcelRange rng, cell;
-            int titleRow = 1, startRow = 2, serCol = 1, rowsCount = values.Length, columnsCount = sugarColumnInfos.Length;
-            #endregion
-
-            #region 录入字段
-            rng = worksheet.Cells[titleRow, serCol, titleRow, serCol + columnsCount - 1];
-            rng.Style.Font.Bold = true;
-            rng.Style.Font.Name = @"黑体";
-            rng.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-            rng.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
-           
-
-            
-            for (int j = 0; j < columnsCount; j++)
-            {
-                SugarColumnInfo column = sugarColumnInfos[j];
-                cell = worksheet.Cells[titleRow, serCol + j];
-                rng = worksheet.Cells[titleRow + 1, serCol + j, titleRow + System.Math.Max(rowsCount, 1), serCol + j];
-                ExcelDataColumn excelDataColumn = excelDataColumnsDic[column.columnName];
-                System.Type type = column.type;
-                PropertyInfo propertyInfo = valueType.GetProperty(column.propertyName)!;
-
-                cell.Value = excelDataColumn.columnName;
-                rng.Style.Font.Bold = false;
-                rng.Style.Font.Name = @"宋体";
-                rng.Style.Numberformat.Format = excelDataColumn.numberFormat;
-                rng.Style.HorizontalAlignment = excelDataColumn.horizontalAlignment;
-                rng.Style.VerticalAlignment = excelDataColumn.verticalAlignment;
-                worksheet.Columns[serCol + j].Width = excelDataColumn.width.Around(6, 30);
-            }
-            #endregion
-
-
-            #region 添加数据
-            for (int i = 0; i < rowsCount; i++)
-            {
-                T row = values[i];
-                for (int j = 0; j < columnsCount; j++)
-                {
-                    SugarColumnInfo column = sugarColumnInfos[j];
-                    PropertyInfo propertyInfo = valueType.GetProperty(column.propertyName)!;
-                    object? obj = propertyInfo.GetValue(row);
-                    cell = worksheet.Cells[startRow + i, serCol + j];
-                    if (obj is null)
-                    {
-                        if (column.type.IsOrNullableNumber())
-                        {
-                            cell.Value = 0M;
-                        }
-                    }
-                    else
-                    {
-                        cell.Value = obj;
-                    }
-                }
-            }
-            #endregion
-            #region 添加边框
-            rng = worksheet.Cells[titleRow, serCol, titleRow + System.Math.Max(rowsCount, 1), serCol + columnsCount - 1];
-            _ = worksheet.Tables.Add(rng, tableName);// 将数据范围转换为Excel表格
-            rng.Style.Font.Size = 11;//设置字体大小
-            rng.Style.WrapText = true;//自动换行
-            #endregion
-            
-
-            return worksheet;
-        }
-
+        }*/
         #endregion
 
 
 
 
 
-
-
-        
-
-
-        /// <summary>
-        /// 将DataTable转化为数组
-        /// </summary>
-        /// <typeparam name="T">数组类型</typeparam>
-        /// <param name="dataTable">要转化的DataTable</param>
-        public static async Task<T[]> ToArray<T>(this DataTable dataTable) where T : class, new()
-        {
-
-            Type objType = typeof(T);
-            SugarColumnInfo[] sugarColumnInfos = objType.GetSugarColumns();
-            HashSet<string> dataTableColumns = dataTable.Columns.Cast<DataColumn>().Select(iterator => iterator.ColumnName).ToHashSet();
-            List<Task> tasks = new List<Task>();
-
-            List<T> result = new List<T>();
-            foreach (DataRow row in dataTable.Rows)
-            {
-                DataRow _row = row;
-                tasks.Add(Task.Run(() =>
-                {
-                    T obj = new T();
-                    foreach (var column in sugarColumnInfos)
-                    {
-                        if (dataTableColumns.Contains(column.columnName))
-                        {
-                            DataColumn dataColumn = dataTable.Columns[column.columnName]!;
-                            PropertyInfo propertyInfo = objType.GetProperty(column.propertyName)!;
-                            object? valueSource = _row[column.columnName];
-                            object? value = column.type.GetValue(valueSource);
-                            propertyInfo.SetValue(obj, value);
-                        }
-                    }
-                    result.Add(obj);
-                }));
-            }
-
-            await Task.WhenAll(tasks);
-
-            return result.ToArray();
-        }
 
     }
 }

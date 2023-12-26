@@ -27,14 +27,15 @@ namespace KalevaAalto
     {
         
         //未找到
-        public const int notfound = -1;
+        public const int Notfound = -1;
 
-        public readonly static Regex regexMonthString = new Regex(@"(?<year>\d{4})[年\-\/]?(?<month>\d{1,2})[月]?");
+        public readonly static Regex RegexMonthString = new Regex(@"(?<year>\d{4})[年\-\/]?(?<month>\d{1,2})[月]?");
+        public readonly static Regex RegexNumber = new Regex(@"[+-]?\d+(\.\d+)?");
 
         /// <summary>
         /// 获取一个带时间的测试名称
         /// </summary>
-        public static string testName
+        public static string TestName
         {
             get
             {
@@ -183,7 +184,7 @@ namespace KalevaAalto
         /// <returns>返回从路径fileName的文本文档所获取的字符串</returns>
         public static string GetStringFromFile(FileNameInfo fileNameInfo, Encoding? encoding = null)
         {
-            return GetStringFromFile(fileNameInfo.fileName,encoding);
+            return GetStringFromFile(fileNameInfo.FileName,encoding);
         }
 
         /// <summary>
@@ -212,7 +213,7 @@ namespace KalevaAalto
         /// <param name="encoding">要获取字符串的字符集，无则选取默认字符串</param>
         public static void SaveToFile(this string str, FileNameInfo fileNameInfo, Encoding? encoding = null)
         {
-            str.SaveToFile(fileNameInfo.fileName,encoding);
+            str.SaveToFile(fileNameInfo.FileName,encoding);
         }
 
         /// <summary>
@@ -223,36 +224,36 @@ namespace KalevaAalto
             /// <summary>
             /// 文件所在文件夹的路径
             /// </summary>
-            public string path { get; } = string.Empty;
+            public string Path { get; } = string.Empty;
 
             /// <summary>
             /// 文件名（不包含后缀名）
             /// </summary>
-            public string name { get; set; } = string.Empty;
+            public string Name { get; set; } = string.Empty;
 
             /// <summary>
             /// 文件后缀名
             /// </summary>
-            public string suffix { get; } = string.Empty;
+            public string Suffix { get; } = string.Empty;
 
             /// <summary>
             /// 文件名类的状态，异常则为false，此时的文件名对象无法正常使用
             /// </summary>
-            public bool status { get; } = false;
+            public bool Status { get; } = false;
 
             /// <summary>
             /// 返回文件是否存在
             /// </summary>
-            public bool exists
+            public bool Exists
             {
                 get
                 {
-                    return File.Exists(this.fileName);
+                    return File.Exists(this.FileName);
                 }
             }
 
 
-            public char sign { get; } = '\\';
+            public char Sign { get; } = '\\';
 
             /// <summary>
             /// 创建解析文件路径所需要用到的正则表达式对象
@@ -279,14 +280,14 @@ namespace KalevaAalto
 
                 if (fileName.Contains('/'))
                 {
-                    this.sign = '/';
+                    this.Sign = '/';
                 }
 
 
-                this.path = match.Groups[@"path"].Value;
-                this.name = match.Groups[@"name"].Value;
-                this.suffix = match.Groups[@"suffix"].Value.ToLower();
-                this.status = true;
+                this.Path = match.Groups[@"path"].Value;
+                this.Name = match.Groups[@"name"].Value;
+                this.Suffix = match.Groups[@"suffix"].Value.ToLower();
+                this.Status = true;
             }
 
             /// <summary>
@@ -297,26 +298,26 @@ namespace KalevaAalto
             /// <param name="suffix">文件后缀名</param>
             public FileNameInfo(string path,string name,string? suffix = null)
             {
-                this.path = path;
-                this.name = name;
-                this.suffix = suffix ?? string.Empty;
-                this.status = true;
+                this.Path = path;
+                this.Name = name;
+                this.Suffix = suffix ?? string.Empty;
+                this.Status = true;
             }
 
             /// <summary>
             /// 返回此文件名对象的文件路径
             /// </summary>
-            public string fileName
+            public string FileName
             {
                 get
                 {
-                    if(this.path.Length > 0)
+                    if(this.Path.Length > 0)
                     {
-                        return this.path + this.sign + this.partialFileName;
+                        return this.Path + this.Sign + this.PartialFileName;
                     }
                     else
                     {
-                        return this.partialFileName;
+                        return this.PartialFileName;
                     }
                     
                 }
@@ -325,28 +326,28 @@ namespace KalevaAalto
             /// <summary>
             /// 返回此文件名对象的文件名（有后缀名）
             /// </summary>
-            public string partialFileName
+            public string PartialFileName
             {
                 get
                 {
-                    if(this.suffix.Length > 0)
+                    if(this.Suffix.Length > 0)
                     {
-                        return this.name + '.' + this.suffix;
+                        return this.Name + '.' + this.Suffix;
                     }
                     else
                     {
-                        return this.name;
+                        return this.Name;
                     }
                     
                 }
             }
 
 
-            public FileInfo fileInfo
+            public FileInfo FileInfo
             {
                 get
                 {
-                    return new FileInfo(this.fileName);
+                    return new FileInfo(this.FileName);
                 }
             }
 
@@ -683,7 +684,7 @@ namespace KalevaAalto
         /// <returns>返回转换出来的数字</returns>
         public static int StringToInt(this string str)
         {
-            Match match = regexNumber.Match(str);
+            Match match = RegexNumber.Match(str);
             if (match.Success)
             {
                 decimal result = Convert.ToDecimal(match.Groups[0].Value);
@@ -702,7 +703,7 @@ namespace KalevaAalto
         /// <returns>返回转换出来的数字</returns>
         public static double StringToDouble(this string str)
         {
-            Match match = regexNumber.Match(str);
+            Match match = RegexNumber.Match(str);
             if (match.Success)
             {
                 decimal result = Convert.ToDecimal(match.Groups[0].Value);
@@ -721,7 +722,7 @@ namespace KalevaAalto
         /// <returns>返回转换出来的数字</returns>
         public static decimal StringToDecimal(this string str)
         {
-            Match match = regexNumber.Match(str);
+            Match match = RegexNumber.Match(str);
             if (match.Success)
             {
                 return Convert.ToDecimal(match.Groups[0].Value);
@@ -789,11 +790,11 @@ namespace KalevaAalto
 
 
 
-        public readonly static Action<string> logConsole = (str) => Console.WriteLine(str);
+        public readonly static Action<string> LogConsole = (str) => Console.WriteLine(str);
 #if DEBUG
-        public readonly static Action<string>? logTest = (str)=> Console.WriteLine(str);
+        public readonly static Action<string>? LogTest = (str)=> Console.WriteLine(str);
 #else
-        public readonly static Action<string>? logTest = null;
+        public readonly static Action<string>? LogTest = null;
 #endif
 
         public class Workflow
@@ -833,16 +834,24 @@ namespace KalevaAalto
 
             public void AddTask(Task task,string? workingContent = null)
             {
-                Stopwatch stopwatch = Stopwatch.StartNew();
-                task.Start();
-                this.tasks.Add(task);
-                task.Wait();
-                if (!string.IsNullOrEmpty(this.workingContent) && this.log is not null)
+                
+                this.tasks.Add(Task.Run(async () =>
                 {
-                    this.log($"进程：{this.subName}：{this.workingContent}成功！！！" + stopwatch.ClockString());
-                }
-
+                    Stopwatch stopwatch = Stopwatch.StartNew();
+                    await task;
+                    if (!string.IsNullOrEmpty(workingContent) && this.log is not null)
+                    {
+                        this.log($"进程：{this.subName}：{this.workingContent}成功！！！" + stopwatch.ClockString());
+                    }
+                }));
             }
+
+            public async Task WhenAllTask()
+            {
+                await Task.WhenAll(this.tasks);
+                this.tasks.Clear();
+            }
+
             
             public void Log(string str)
             {
@@ -877,8 +886,6 @@ namespace KalevaAalto
             }
             public void End()
             {
-
-                Task.WhenAll(this.tasks).Wait();
                 if(this.log is not null)
                 {
                     if (!string.IsNullOrEmpty(this.workingContent))

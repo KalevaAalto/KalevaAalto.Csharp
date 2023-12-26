@@ -22,12 +22,31 @@ namespace KalevaAalto
 {
     public static partial class Main
     {
+        #region Style
+        public static void SetBorder(this ExcelStyle excelStyle)
+        {
+
+        }
+
+
+
+        #endregion
+
+
+
+
+
+
+
+
+
+
         /// <summary>
         /// 从文件中获取Excel文档
         /// </summary>
         public static ExcelPackage GetExcelPackage(this FileNameInfo fileNameInfo)
         {
-            return new ExcelPackage(fileNameInfo.fileInfo);
+            return new ExcelPackage(fileNameInfo.FileInfo);
         }
 
 
@@ -37,7 +56,7 @@ namespace KalevaAalto
         /// <param name="package">要保存的Excel文档</param>
         public static void SaveAs(this ExcelPackage package,FileNameInfo fileNameInfo)
         {
-            package.SaveAs(fileNameInfo.fileInfo);
+            package.SaveAs(fileNameInfo.FileInfo);
         }
 
 

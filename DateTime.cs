@@ -98,7 +98,7 @@ namespace KalevaAalto
         public static DateTime GetMonthFromString(string monthString)
         {
 
-            Match match = regexMonthString.Match(monthString);
+            Match match = RegexMonthString.Match(monthString);
             if (match.Success)
             {
                 return new DateTime(Convert.ToInt16(match.Groups[@"year"].Value), Convert.ToInt16(match.Groups[@"month"].Value), 1);
