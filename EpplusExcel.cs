@@ -481,8 +481,6 @@ namespace KalevaAalto
 
         public static void ParseTable(this ExcelColumnMatch[] excelColumnMatchs, DataTable excelTable, DataTable table)
         {
-
-
             Dictionary<string, int> keyValuePairs = new Dictionary<string, int>();
 
             //进行字段匹配
@@ -527,82 +525,21 @@ namespace KalevaAalto
                     DataRow newRow = table.Rows.Add();
                     foreach (ExcelColumnMatch excelColumnMatch in excelColumnMatchs)
                     {
+                        ObjectConvert objectConvert = new ObjectConvert(excelColumnMatch.type);
                         columnE = excelColumnMatch.maybeColumnName.First();
-                        var cell = excelRow[keyValuePairs[excelColumnMatch.columnName]];
+                        object? cell = excelRow[keyValuePairs[excelColumnMatch.columnName]];
+                        object? obj = objectConvert.GetValue(cell);
+                        
 
-
-                        if(excelColumnMatch.type == typeof(DateTime))
+                        if(cell == null || cell == DBNull.Value || obj == null | obj == DBNull.Value)
                         {
-                            if (cell.GetType() == typeof(int) || cell.GetType() == typeof(double))
-                            {
-                                newRow[excelColumnMatch.columnName] = DateTime.FromOADate((double)cell);
-                            }
-                            else
-                            {
-                                newRow[excelColumnMatch.columnName] = DBNull.Value;
-                            }
-                        }
-                        else if(excelColumnMatch.type == typeof(int))
-                        {
-                            if(cell is null || cell is DBNull)
-                            {
-                                newRow[excelColumnMatch.columnName] = 0;
-                            }
-                            else if (cell.GetType().IsOrNullableNumber())
-                            {
-                                newRow[excelColumnMatch.columnName] = Convert.ToInt32(cell);
-                            }
-                            else if (cell.GetType() == typeof(string))
-                            {
-                                newRow[excelColumnMatch.columnName] = cell?.ToString()?.StringToInt() ?? 0;
-                            }
-                            else
-                            {
-                                newRow[excelColumnMatch.columnName] = 0;
-                            }
-                        }
-                        else if (excelColumnMatch.type == typeof(decimal))
-                        {
-                            if (cell is null || cell is DBNull)
-                            {
-                                newRow[excelColumnMatch.columnName] = 0;
-                            }
-                            else if (cell.GetType().IsOrNullableNumber())
-                            {
-                                newRow[excelColumnMatch.columnName] = Convert.ToDecimal(cell);
-                            }
-                            else if (cell.GetType() == typeof(string))
-                            {
-                                newRow[excelColumnMatch.columnName] = cell?.ToString()?.StringToDecimal() ?? 0m;
-                            }
-                            else
-                            {
-                                newRow[excelColumnMatch.columnName] = 0;
-                            }
-                        }
-                        else if (excelColumnMatch.type == typeof(double))
-                        {
-                            if (cell is null || cell is DBNull)
-                            {
-                                newRow[excelColumnMatch.columnName] = 0;
-                            }
-                            else if (cell.GetType().IsOrNullableNumber())
-                            {
-                                newRow[excelColumnMatch.columnName] = Convert.ToDouble(cell);
-                            }
-                            else if (cell.GetType() == typeof(string))
-                            {
-                                newRow[excelColumnMatch.columnName] = cell?.ToString()?.StringToDouble() ?? 0.0;
-                            }
-                            else
-                            {
-                                newRow[excelColumnMatch.columnName] = 0.0;
-                            }
+                            newRow[excelColumnMatch.columnName] = DBNull.Value;
                         }
                         else
                         {
-                            newRow[excelColumnMatch.columnName] = cell;
+                            newRow[excelColumnMatch.columnName] = obj;
                         }
+
                     }
                 }
             }

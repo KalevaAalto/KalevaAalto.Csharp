@@ -879,7 +879,7 @@ namespace KalevaAalto
                 }
                 else
                 {
-                    return DateTime.MinValue.AddDays(tem);
+                    return DateTime.FromOADate(tem);
                 }
             }
             else if (objType.IsOrNullableDateTime())
