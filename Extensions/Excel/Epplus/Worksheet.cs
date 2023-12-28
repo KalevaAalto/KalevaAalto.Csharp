@@ -51,6 +51,10 @@ namespace KalevaAalto.Extensions.Excel.Epplus
             // 设置纸张大小为A5
             worksheet.PrinterSettings.PaperSize = ePaperSize.A5;
 
+            // 设置页面居中
+            worksheet.PrinterSettings.HorizontalCentered = true;
+            //worksheet.PrinterSettings.VerticalCentered = true;
+
             // 将工作表调整为一页
             worksheet.PrinterSettings.FitToPage = true;
             //worksheet.PrinterSettings.FitToWidth = 1;

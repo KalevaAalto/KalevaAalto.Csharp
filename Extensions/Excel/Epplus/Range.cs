@@ -11,14 +11,14 @@ namespace KalevaAalto.Extensions.Excel.Epplus
 {
     internal class Range : IRange
     {
-        private readonly ExcelRange _rng;
-        private ExcelRange rng=> this._rng.Worksheet.Cells[this.pos.StartPos.Row,this.pos.StartPos.Column,this.pos.EndPos.Row,this.pos.EndPos.Column];
+        private readonly ExcelWorksheet worksheet;
+        private ExcelRange rng=> this.worksheet.Cells[this.pos.StartPos.Row,this.pos.StartPos.Column,this.pos.EndPos.Row,this.pos.EndPos.Column];
         private readonly RangePos pos;
 
         internal Range(ExcelRange rng) 
         {
             this.pos = new RangePos(new CellPos(rng.Start.Row, rng.Start.Column), new CellPos(rng.End.Row, rng.End.Column));
-            this._rng = rng;
+            this.worksheet = rng.Worksheet;
         }
 
         public override IStyle Style => new Style(rng.Style);
