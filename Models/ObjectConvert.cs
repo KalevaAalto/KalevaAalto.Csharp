@@ -9,7 +9,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace KalevaAalto
+namespace KalevaAalto.Models
 {
     public class ObjectConvert
     {
@@ -24,7 +24,7 @@ namespace KalevaAalto
         {
             get
             {
-                return this.type.IsNullable();
+                return type.IsNullable();
             }
         }
 
@@ -32,7 +32,7 @@ namespace KalevaAalto
         {
             get
             {
-                if (this.isNullable)
+                if (isNullable)
                 {
                     return null;
                 }
@@ -67,103 +67,103 @@ namespace KalevaAalto
 
         public object? GetValue(object? obj)
         {
-            if(obj is null)
+            if (obj is null)
             {
-                return this.defaultValue;
+                return defaultValue;
             }
-            else if(this.type == obj.GetType())
+            else if (type == obj.GetType())
             {
                 return obj;
             }
-            else if (this.type.IsOrNullableUInteger())
+            else if (type.IsOrNullableUInteger())
             {
-                return this.ToUInteger(obj);
+                return ToUInteger(obj);
             }
-            else if (this.type.IsOrNullableInteger())
+            else if (type.IsOrNullableInteger())
             {
-                return this.ToInteger(obj);
+                return ToInteger(obj);
             }
-            else if (this.type.IsOrNullableFloat())
+            else if (type.IsOrNullableFloat())
             {
-                return this.ToFloat(obj);
+                return ToFloat(obj);
             }
-            else if (this.type.IsOrNullableDecimal())
+            else if (type.IsOrNullableDecimal())
             {
-                return this.ToDecimal(obj);
+                return ToDecimal(obj);
             }
-            else if (this.type.IsOrNullableBool())
+            else if (type.IsOrNullableBool())
             {
-                return this.ToBool(obj);
+                return ToBool(obj);
             }
-            else if (this.type.IsOrNullableChar())
+            else if (type.IsOrNullableChar())
             {
-                return this.ToChar(obj);
+                return ToChar(obj);
             }
-            else if (this.type.IsOrNullableDateTime())
+            else if (type.IsOrNullableDateTime())
             {
-                return this.ToDateTime(obj);
+                return ToDateTime(obj);
             }
-            else if(this.type == typeof(string))
+            else if (type == typeof(string))
             {
-                return this.ToString(obj);
+                return ToString(obj);
             }
-            else if(this.type == typeof(byte[]))
+            else if (type == typeof(byte[]))
             {
-                return this.ToByteArray(obj);
+                return ToByteArray(obj);
             }
 
 
-            return this.defaultValue;
+            return defaultValue;
         }
 
 
 
 
-        
+
 
 
         private readonly static Regex regexNumber = new Regex(@"[+-]?\d+(\.\d+)?");
         private object? ToUIntegerLastReturn(object tem)
         {
-            if (this.type == typeof(byte) || this.type == typeof(byte?))
+            if (type == typeof(byte) || type == typeof(byte?))
             {
-                return System.Convert.ToByte(tem);
+                return Convert.ToByte(tem);
             }
-            else if (this.type == typeof(ushort) || this.type == typeof(ushort?))
+            else if (type == typeof(ushort) || type == typeof(ushort?))
             {
-                return System.Convert.ToUInt16(tem);
+                return Convert.ToUInt16(tem);
             }
-            else if (this.type == typeof(uint) || this.type == typeof(uint?))
+            else if (type == typeof(uint) || type == typeof(uint?))
             {
-                return System.Convert.ToUInt32(tem);
+                return Convert.ToUInt32(tem);
             }
-            else if (this.type == typeof(ulong) || this.type == typeof(ulong?))
+            else if (type == typeof(ulong) || type == typeof(ulong?))
             {
-                return System.Convert.ToUInt64(tem);
+                return Convert.ToUInt64(tem);
             }
-            return this.defaultValue;
+            return defaultValue;
         }
         private object? ToUInteger(object obj)
         {
             Type objType = obj.GetType();
             ulong minValue = ulong.MinValue;
             ulong maxValue = ulong.MaxValue;
-            if(this.type == typeof(byte) || this.type == typeof(byte?))
+            if (type == typeof(byte) || type == typeof(byte?))
             {
                 minValue = byte.MinValue;
                 maxValue = byte.MaxValue;
             }
-            else if (this.type == typeof(ushort) || this.type == typeof(ushort?))
+            else if (type == typeof(ushort) || type == typeof(ushort?))
             {
                 minValue = ushort.MinValue;
                 maxValue = ushort.MaxValue;
             }
-            else if (this.type == typeof(uint) || this.type == typeof(uint?))
+            else if (type == typeof(uint) || type == typeof(uint?))
             {
                 minValue = uint.MinValue;
                 maxValue = uint.MaxValue;
             }
-            else if (this.type == typeof(ulong) || this.type == typeof(ulong?))
+            else if (type == typeof(ulong) || type == typeof(ulong?))
             {
                 minValue = ulong.MinValue;
                 maxValue = ulong.MaxValue;
@@ -172,46 +172,7 @@ namespace KalevaAalto
 
             if (objType.IsOrNullableUInteger())
             {
-                ulong tem = System.Convert.ToUInt64(obj);
-                if(tem < minValue)
-                {
-                    return isNullable? null : minValue;
-                }
-                else if (tem > maxValue)
-                {
-                    return isNullable ? null : maxValue;
-                }
-                else
-                {
-                    return this.ToUIntegerLastReturn(tem);
-                }
-            }
-            else if (objType.IsOrNullableInteger())
-            {
-                if (System.Convert.ToInt64(obj) < 0)
-                {
-                    return this.defaultValue;
-                }
-                else
-                {
-                    ulong tem = System.Convert.ToUInt64(obj);
-                    if (tem < minValue)
-                    {
-                        return isNullable ? null : minValue;
-                    }
-                    else if (tem > maxValue)
-                    {
-                        return isNullable ? null : maxValue;
-                    }
-                    else
-                    {
-                        return this.ToUIntegerLastReturn(tem);
-                    }
-                }
-            }
-            else if (objType.IsOrNullableFloat())
-            {
-                double tem = System.Convert.ToDouble(obj);
+                ulong tem = Convert.ToUInt64(obj);
                 if (tem < minValue)
                 {
                     return isNullable ? null : minValue;
@@ -222,7 +183,46 @@ namespace KalevaAalto
                 }
                 else
                 {
-                    return this.ToUIntegerLastReturn(tem);
+                    return ToUIntegerLastReturn(tem);
+                }
+            }
+            else if (objType.IsOrNullableInteger())
+            {
+                if (Convert.ToInt64(obj) < 0)
+                {
+                    return defaultValue;
+                }
+                else
+                {
+                    ulong tem = Convert.ToUInt64(obj);
+                    if (tem < minValue)
+                    {
+                        return isNullable ? null : minValue;
+                    }
+                    else if (tem > maxValue)
+                    {
+                        return isNullable ? null : maxValue;
+                    }
+                    else
+                    {
+                        return ToUIntegerLastReturn(tem);
+                    }
+                }
+            }
+            else if (objType.IsOrNullableFloat())
+            {
+                double tem = Convert.ToDouble(obj);
+                if (tem < minValue)
+                {
+                    return isNullable ? null : minValue;
+                }
+                else if (tem > maxValue)
+                {
+                    return isNullable ? null : maxValue;
+                }
+                else
+                {
+                    return ToUIntegerLastReturn(tem);
                 }
             }
             else if (objType.IsOrNullableDecimal())
@@ -238,7 +238,7 @@ namespace KalevaAalto
                 }
                 else
                 {
-                    return this.ToUIntegerLastReturn(tem);
+                    return ToUIntegerLastReturn(tem);
                 }
             }
             else if (objType.IsOrNullableBool())
@@ -254,16 +254,16 @@ namespace KalevaAalto
                 }
                 else if (type == typeof(uint) || type == typeof(uint?))
                 {
-                    return tem ? (uint)1 : (uint)0;
+                    return tem ? 1 : (uint)0;
                 }
                 else if (type == typeof(ulong) || type == typeof(ulong?))
                 {
-                    return tem ? (ulong)1 : (ulong)0;
+                    return tem ? 1 : (ulong)0;
                 }
             }
             else if (objType.IsOrNullableChar())
             {
-                ushort tem = System.Convert.ToUInt16(obj);
+                ushort tem = Convert.ToUInt16(obj);
                 if (tem < minValue)
                 {
                     return isNullable ? null : minValue;
@@ -274,7 +274,7 @@ namespace KalevaAalto
                 }
                 else
                 {
-                    return this.ToUIntegerLastReturn(tem);
+                    return ToUIntegerLastReturn(tem);
                 }
             }
             else if (objType.IsOrNullableDateTime())
@@ -290,20 +290,20 @@ namespace KalevaAalto
                 }
                 else
                 {
-                    return this.ToUIntegerLastReturn(tem);
+                    return ToUIntegerLastReturn(tem);
                 }
             }
-            else if(objType == typeof(string))
+            else if (objType == typeof(string))
             {
                 if (string.IsNullOrEmpty((string)obj))
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
 
                 Match match = regexNumber.Match((string)obj);
                 if (match.Success)
                 {
-                    double tem = System.Convert.ToDouble(match.Value);
+                    double tem = Convert.ToDouble(match.Value);
                     if (tem < minValue)
                     {
                         return isNullable ? null : minValue;
@@ -314,57 +314,57 @@ namespace KalevaAalto
                     }
                     else
                     {
-                        return this.ToUIntegerLastReturn(tem);
+                        return ToUIntegerLastReturn(tem);
                     }
                 }
                 else
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
             }
-            else if(objType == typeof(byte[]))
+            else if (objType == typeof(byte[]))
             {
                 //修改中
 
             }
 
-            return this.defaultValue;
+            return defaultValue;
 
         }
 
 
         private object? ToIntegerLastReturn(object tem)
         {
-            if (this.type == typeof(short) || this.type == typeof(short?))
+            if (type == typeof(short) || type == typeof(short?))
             {
-                return System.Convert.ToInt16(tem);
+                return Convert.ToInt16(tem);
             }
-            else if (this.type == typeof(int) || this.type == typeof(int?))
+            else if (type == typeof(int) || type == typeof(int?))
             {
-                return System.Convert.ToInt32(tem);
+                return Convert.ToInt32(tem);
             }
-            else if (this.type == typeof(long) || this.type == typeof(long?))
+            else if (type == typeof(long) || type == typeof(long?))
             {
-                return System.Convert.ToInt64(tem);
+                return Convert.ToInt64(tem);
             }
-            return this.defaultValue;
+            return defaultValue;
         }
         private object? ToInteger(object obj)
         {
             Type objType = obj.GetType();
             long minValue = long.MinValue;
             long maxValue = long.MaxValue;
-            if (this.type == typeof(short) || this.type == typeof(short?))
+            if (type == typeof(short) || type == typeof(short?))
             {
                 minValue = short.MinValue;
                 maxValue = short.MaxValue;
             }
-            else if (this.type == typeof(int) || this.type == typeof(int?))
+            else if (type == typeof(int) || type == typeof(int?))
             {
                 minValue = int.MinValue;
                 maxValue = int.MaxValue;
             }
-            else if (this.type == typeof(long) || this.type == typeof(long?))
+            else if (type == typeof(long) || type == typeof(long?))
             {
                 minValue = long.MinValue;
                 maxValue = long.MaxValue;
@@ -373,19 +373,19 @@ namespace KalevaAalto
 
             if (objType.IsOrNullableUInteger())
             {
-                ulong tem = System.Convert.ToUInt64(obj);
+                ulong tem = Convert.ToUInt64(obj);
                 if (tem > (ulong)maxValue)
                 {
                     return isNullable ? null : maxValue;
                 }
                 else
                 {
-                    return this.ToIntegerLastReturn(tem);
+                    return ToIntegerLastReturn(tem);
                 }
             }
             else if (objType.IsOrNullableInteger())
             {
-                long tem = System.Convert.ToInt64(obj);
+                long tem = Convert.ToInt64(obj);
                 if (tem < minValue)
                 {
                     return isNullable ? null : minValue;
@@ -396,12 +396,12 @@ namespace KalevaAalto
                 }
                 else
                 {
-                    return this.ToIntegerLastReturn(tem);
+                    return ToIntegerLastReturn(tem);
                 }
             }
             else if (objType.IsOrNullableFloat())
             {
-                double tem = System.Convert.ToDouble(obj);
+                double tem = Convert.ToDouble(obj);
                 if (tem < minValue)
                 {
                     return isNullable ? null : minValue;
@@ -412,7 +412,7 @@ namespace KalevaAalto
                 }
                 else
                 {
-                    return this.ToIntegerLastReturn(tem);
+                    return ToIntegerLastReturn(tem);
                 }
             }
             else if (objType.IsOrNullableDecimal())
@@ -428,7 +428,7 @@ namespace KalevaAalto
                 }
                 else
                 {
-                    return this.ToIntegerLastReturn(tem);
+                    return ToIntegerLastReturn(tem);
                 }
             }
             else if (objType.IsOrNullableBool())
@@ -440,28 +440,28 @@ namespace KalevaAalto
                 }
                 else if (type == typeof(int) || type == typeof(int?))
                 {
-                    return tem ? (int)1 : (int)0;
+                    return tem ? 1 : 0;
                 }
                 else if (type == typeof(long) || type == typeof(long?))
                 {
-                    return tem ? (long)1 : (long)0;
+                    return tem ? 1 : (long)0;
                 }
             }
             else if (objType.IsOrNullableChar())
             {
-                ushort tem = System.Convert.ToUInt16(obj);
+                ushort tem = Convert.ToUInt16(obj);
                 if (tem > maxValue)
                 {
                     return isNullable ? null : maxValue;
                 }
                 else
                 {
-                    return this.ToIntegerLastReturn(tem);
+                    return ToIntegerLastReturn(tem);
                 }
             }
             else if (objType.IsOrNullableDateTime())
             {
-                double tem = (System.Convert.ToDateTime(obj) - DateTime.MinValue).TotalDays;
+                double tem = (Convert.ToDateTime(obj) - DateTime.MinValue).TotalDays;
                 if (tem < minValue)
                 {
                     return isNullable ? null : minValue;
@@ -472,20 +472,20 @@ namespace KalevaAalto
                 }
                 else
                 {
-                    return this.ToIntegerLastReturn(tem);
+                    return ToIntegerLastReturn(tem);
                 }
             }
             else if (objType == typeof(string))
             {
                 if (string.IsNullOrEmpty((string)obj))
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
 
                 Match match = regexNumber.Match((string)obj);
                 if (match.Success)
                 {
-                    double tem = System.Convert.ToDouble(match.Value);
+                    double tem = Convert.ToDouble(match.Value);
                     if (tem < minValue)
                     {
                         return isNullable ? null : minValue;
@@ -496,12 +496,12 @@ namespace KalevaAalto
                     }
                     else
                     {
-                        return this.ToIntegerLastReturn(tem);
+                        return ToIntegerLastReturn(tem);
                     }
                 }
                 else
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
             }
             else if (objType == typeof(byte[]))
@@ -510,7 +510,7 @@ namespace KalevaAalto
 
             }
 
-            return this.defaultValue;
+            return defaultValue;
 
         }
 
@@ -518,27 +518,27 @@ namespace KalevaAalto
 
         private object? ToFloatLastReturn(object tem)
         {
-            if (this.type == typeof(float) || this.type == typeof(float?))
+            if (type == typeof(float) || type == typeof(float?))
             {
-                return System.Convert.ToSingle(tem);
+                return Convert.ToSingle(tem);
             }
-            else if (this.type == typeof(double) || this.type == typeof(double?))
+            else if (type == typeof(double) || type == typeof(double?))
             {
-                return System.Convert.ToDouble(tem);
+                return Convert.ToDouble(tem);
             }
-            return this.defaultValue;
+            return defaultValue;
         }
         private object? ToFloat(object obj)
         {
             Type objType = obj.GetType();
             double minValue = double.MinValue;
             double maxValue = double.MaxValue;
-            if (this.type == typeof(float) || this.type == typeof(float?))
+            if (type == typeof(float) || type == typeof(float?))
             {
                 minValue = float.MinValue;
                 maxValue = float.MaxValue;
             }
-            else if (this.type == typeof(double) || this.type == typeof(double?))
+            else if (type == typeof(double) || type == typeof(double?))
             {
                 minValue = double.MinValue;
                 maxValue = double.MaxValue;
@@ -547,17 +547,17 @@ namespace KalevaAalto
 
             if (objType.IsOrNullableUInteger())
             {
-                double tem = System.Convert.ToUInt64(obj);
-                return this.ToFloatLastReturn(tem);
+                double tem = Convert.ToUInt64(obj);
+                return ToFloatLastReturn(tem);
             }
             else if (objType.IsOrNullableInteger())
             {
-                double tem = System.Convert.ToUInt64(obj);
-                return this.ToFloatLastReturn(tem);
+                double tem = Convert.ToUInt64(obj);
+                return ToFloatLastReturn(tem);
             }
             else if (objType.IsOrNullableFloat())
             {
-                double tem = System.Convert.ToDouble(obj);
+                double tem = Convert.ToDouble(obj);
                 if (tem < minValue)
                 {
                     return isNullable ? null : minValue;
@@ -568,65 +568,65 @@ namespace KalevaAalto
                 }
                 else
                 {
-                    return this.ToFloatLastReturn(tem);
+                    return ToFloatLastReturn(tem);
                 }
             }
             else if (objType.IsOrNullableDecimal())
             {
-                decimal tem = System.Convert.ToDecimal(obj);
-                if (tem < System.Convert.ToDecimal(minValue))
+                decimal tem = Convert.ToDecimal(obj);
+                if (tem < Convert.ToDecimal(minValue))
                 {
                     return isNullable ? null : minValue;
                 }
-                else if (tem > System.Convert.ToDecimal(maxValue))
+                else if (tem > Convert.ToDecimal(maxValue))
                 {
                     return isNullable ? null : maxValue;
                 }
                 else
                 {
-                    return this.ToFloatLastReturn(tem);
+                    return ToFloatLastReturn(tem);
                 }
             }
             else if (objType.IsOrNullableBool())
             {
-                bool tem = System.Convert.ToBoolean(obj);
+                bool tem = Convert.ToBoolean(obj);
                 if (type == typeof(float) || type == typeof(float?))
                 {
-                    return tem ? (float)1 : (float)0;
+                    return tem ? 1 : (float)0;
                 }
                 else if (type == typeof(double) || type == typeof(double?))
                 {
-                    return tem ? (double)1 : (double)0;
+                    return tem ? 1 : (double)0;
                 }
             }
             else if (objType.IsOrNullableChar())
             {
-                ushort tem = System.Convert.ToUInt16(obj);
+                ushort tem = Convert.ToUInt16(obj);
                 if (tem > maxValue)
                 {
                     return isNullable ? null : maxValue;
                 }
                 else
                 {
-                    return this.ToFloatLastReturn(tem);
+                    return ToFloatLastReturn(tem);
                 }
             }
             else if (objType.IsOrNullableDateTime())
             {
                 double tem = ((DateTime)obj - DateTime.MinValue).TotalDays;
-                return this.ToFloatLastReturn(tem);
+                return ToFloatLastReturn(tem);
             }
             else if (objType == typeof(string))
             {
                 if (string.IsNullOrEmpty((string)obj))
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
 
                 Match match = regexNumber.Match((string)obj);
                 if (match.Success)
                 {
-                    double tem = System.Convert.ToDouble(match.Value);
+                    double tem = Convert.ToDouble(match.Value);
                     if (tem < minValue)
                     {
                         return isNullable ? null : minValue;
@@ -637,16 +637,16 @@ namespace KalevaAalto
                     }
                     else
                     {
-                        return this.ToFloatLastReturn(tem);
+                        return ToFloatLastReturn(tem);
                     }
                 }
                 else
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
             }
 
-            return this.defaultValue;
+            return defaultValue;
 
         }
 
@@ -657,26 +657,26 @@ namespace KalevaAalto
 
             if (objType.IsOrNullableUInteger())
             {
-                return System.Convert.ToDecimal(obj);
+                return Convert.ToDecimal(obj);
             }
             else if (objType.IsOrNullableInteger())
             {
-                return System.Convert.ToDecimal(obj);
+                return Convert.ToDecimal(obj);
             }
             else if (objType.IsOrNullableFloat())
             {
-                double tem = System.Convert.ToDouble(obj);
-                if (tem < System.Convert.ToDouble(decimal.MinValue))
+                double tem = Convert.ToDouble(obj);
+                if (tem < Convert.ToDouble(decimal.MinValue))
                 {
                     return isNullable ? null : decimal.MinValue;
                 }
-                else if (tem > System.Convert.ToDouble(decimal.MaxValue))
+                else if (tem > Convert.ToDouble(decimal.MaxValue))
                 {
                     return isNullable ? null : decimal.MaxValue;
                 }
                 else
                 {
-                    return System.Convert.ToDecimal(tem);
+                    return Convert.ToDecimal(tem);
                 }
             }
             else if (objType.IsOrNullableDecimal())
@@ -685,36 +685,36 @@ namespace KalevaAalto
             }
             else if (objType.IsOrNullableBool())
             {
-                bool tem = System.Convert.ToBoolean(obj);
-                return tem ? (decimal)1 : (decimal)0;
+                bool tem = Convert.ToBoolean(obj);
+                return tem ? 1 : (decimal)0;
             }
             else if (objType.IsOrNullableChar())
             {
-                return System.Convert.ToDecimal(obj);
+                return Convert.ToDecimal(obj);
             }
             else if (objType.IsOrNullableDateTime())
             {
-                return System.Convert.ToDecimal(((DateTime)obj - DateTime.MinValue).TotalDays);
+                return Convert.ToDecimal(((DateTime)obj - DateTime.MinValue).TotalDays);
             }
             else if (objType == typeof(string))
             {
                 if (string.IsNullOrEmpty((string)obj))
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
 
                 Match match = regexNumber.Match((string)obj);
                 if (match.Success)
                 {
-                    return System.Convert.ToDecimal(match.Value);
+                    return Convert.ToDecimal(match.Value);
                 }
                 else
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
             }
 
-            return this.defaultValue;
+            return defaultValue;
 
         }
 
@@ -723,58 +723,58 @@ namespace KalevaAalto
         {
             if (obj == null)
             {
-                return this.defaultValue;
+                return defaultValue;
             }
             Type objType = obj.GetType();
 
 
             if (objType.IsOrNullableNumber())
             {
-                double tem = System.Convert.ToDouble(obj);
-                return tem == (double)0;
+                double tem = Convert.ToDouble(obj);
+                return tem == 0;
             }
-            else if(objType.IsOrNullableBool())
+            else if (objType.IsOrNullableBool())
             {
                 return (bool)obj;
             }
             else if (objType.IsOrNullableChar())
             {
-                if(new HashSet<char> { 't','T','对','是','1' }.Contains(System.Convert.ToChar(obj)))
+                if (new HashSet<char> { 't', 'T', '对', '是', '1' }.Contains(Convert.ToChar(obj)))
                 {
                     return true;
                 }
-                else if (new HashSet<char> { 'f', 'F', '错', '否', '0' }.Contains(System.Convert.ToChar(obj)))
+                else if (new HashSet<char> { 'f', 'F', '错', '否', '0' }.Contains(Convert.ToChar(obj)))
                 {
                     return false;
                 }
                 else
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
             }
             else if (objType == typeof(string))
             {
-                if (new HashSet<string> { @"TRUE",@"True",@"T",@"true",@"t",@"是的",@"是",@"对的",@"对",@"1" }.Contains(System.Convert.ToString(obj) ?? string.Empty))
+                if (new HashSet<string> { @"TRUE", @"True", @"T", @"true", @"t", @"是的", @"是", @"对的", @"对", @"1" }.Contains(Convert.ToString(obj) ?? string.Empty))
                 {
                     return true;
                 }
-                else if (new HashSet<string> { @"FALSE", @"False", @"F", @"false", @"f",  @"否", @"错" ,@"错的", @"不对", @"0" }.Contains(System.Convert.ToString(obj) ?? string.Empty))
+                else if (new HashSet<string> { @"FALSE", @"False", @"F", @"false", @"f", @"否", @"错", @"错的", @"不对", @"0" }.Contains(Convert.ToString(obj) ?? string.Empty))
                 {
                     return false;
                 }
                 else
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
             }
-            return this.defaultValue;
+            return defaultValue;
         }
 
         private object? ToChar(object? obj)
         {
             if (obj == null)
             {
-                return this.defaultValue;
+                return defaultValue;
             }
             Type objType = obj.GetType();
             char minValue = char.MinValue;
@@ -782,50 +782,50 @@ namespace KalevaAalto
 
             if (objType.IsOrNullableUInteger())
             {
-                ulong tem = System.Convert.ToUInt64(obj);
+                ulong tem = Convert.ToUInt64(obj);
                 if (tem < minValue)
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
                 else if (tem > maxValue)
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
                 else
                 {
-                    return System.Convert.ToChar(tem);
+                    return Convert.ToChar(tem);
                 }
             }
             else if (objType.IsOrNullableInteger())
             {
-                long tem = System.Convert.ToInt64(obj);
+                long tem = Convert.ToInt64(obj);
                 if (tem < minValue)
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
                 else if (tem > maxValue)
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
                 else
                 {
-                    return System.Convert.ToChar(tem);
+                    return Convert.ToChar(tem);
                 }
             }
             else if (objType.IsOrNullableFloat())
             {
-                double tem = System.Convert.ToDouble(obj);
+                double tem = Convert.ToDouble(obj);
                 if (tem < minValue)
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
                 else if (tem > maxValue)
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
                 else
                 {
-                    return System.Convert.ToChar(tem);
+                    return Convert.ToChar(tem);
                 }
             }
             else if (objType.IsOrNullableDecimal())
@@ -833,15 +833,15 @@ namespace KalevaAalto
                 decimal tem = (decimal)obj;
                 if (tem < minValue)
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
                 else if (tem > maxValue)
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
                 else
                 {
-                    return System.Convert.ToChar(tem);
+                    return Convert.ToChar(tem);
                 }
             }
             else if (objType.IsOrNullableChar())
@@ -852,18 +852,18 @@ namespace KalevaAalto
             {
                 if (string.IsNullOrEmpty((string)obj))
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
                 return ((string)obj)[0];
             }
-            else if(objType == typeof(byte[]))
+            else if (objType == typeof(byte[]))
             {
                 byte[] tem = (byte[])obj;
                 if (tem.Length == 0)
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
-                else if(tem.Length == 1)
+                else if (tem.Length == 1)
                 {
                     return (char)tem[0];
                 }
@@ -877,27 +877,27 @@ namespace KalevaAalto
 
 
 
-            return this.defaultValue;
+            return defaultValue;
         }
 
         private object? ToDateTime(object? obj)
         {
             if (obj == null)
             {
-                return this.defaultValue;
+                return defaultValue;
             }
             Type objType = obj.GetType();
 
             if (objType.IsOrNullableNumber())
             {
-                double tem = System.Convert.ToDouble(obj);
+                double tem = Convert.ToDouble(obj);
                 if (tem < 0)
                 {
-                    return this.isNullable? null : DateTime.MinValue;
+                    return isNullable ? null : DateTime.MinValue;
                 }
-                else if(tem > (DateTime.MaxValue - DateTime.MinValue).TotalDays)
+                else if (tem > (DateTime.MaxValue - DateTime.MinValue).TotalDays)
                 {
-                    return this.isNullable ? null : DateTime.MaxValue;
+                    return isNullable ? null : DateTime.MaxValue;
                 }
                 else
                 {
@@ -913,7 +913,7 @@ namespace KalevaAalto
                 string tem = (string)obj;
                 if (string.IsNullOrEmpty(tem))
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
 
                 if (DateTime.TryParse(tem, out DateTime dateTime))
@@ -922,12 +922,12 @@ namespace KalevaAalto
                 }
                 else
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
 
             }
 
-            return this.defaultValue;
+            return defaultValue;
         }
 
 
@@ -937,36 +937,36 @@ namespace KalevaAalto
         {
             if (obj == null)
             {
-                return this.defaultValue;
+                return defaultValue;
             }
             Type objType = obj.GetType();
 
             if (objType.IsOrNullableNumber())
             {
-                return System.Convert.ToString(obj);
+                return Convert.ToString(obj);
             }
             else if (objType.IsOrNullableBool())
             {
-                return System.Convert.ToString(obj);
+                return Convert.ToString(obj);
             }
             else if (objType.IsOrNullableChar())
             {
-                return System.Convert.ToString(obj);
+                return Convert.ToString(obj);
             }
             else if (objType.IsOrNullableDateTime())
             {
-                return System.Convert.ToString(obj);
+                return Convert.ToString(obj);
             }
             else if (objType == typeof(string))
             {
-                return System.Convert.ToString(obj);
+                return Convert.ToString(obj);
             }
-            else if(objType == typeof(byte[]))
+            else if (objType == typeof(byte[]))
             {
                 byte[] tem = (byte[])obj;
-                if(tem.Length == 0)
+                if (tem.Length == 0)
                 {
-                    return this.defaultValue;
+                    return defaultValue;
                 }
                 else
                 {
@@ -980,7 +980,7 @@ namespace KalevaAalto
             }
 
 
-            return this.defaultValue;
+            return defaultValue;
         }
 
 
@@ -988,12 +988,12 @@ namespace KalevaAalto
         {
             if (obj == null)
             {
-                return this.defaultValue;
+                return defaultValue;
             }
             Type objType = obj.GetType();
 
-            
-            if(objType == typeof(byte) || objType == typeof(byte?))
+
+            if (objType == typeof(byte) || objType == typeof(byte?))
             {
                 return BitConverter.GetBytes((byte)obj);
             }
@@ -1051,7 +1051,7 @@ namespace KalevaAalto
             }
             else if (objType == typeof(string))
             {
-                return Encoding.Unicode.GetBytes(System.Convert.ToString(obj) ?? string.Empty);
+                return Encoding.Unicode.GetBytes(Convert.ToString(obj) ?? string.Empty);
             }
             else if (objType == typeof(byte[]))
             {

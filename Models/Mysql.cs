@@ -1,4 +1,5 @@
-﻿using SqlSugar;
+﻿using KalevaAalto;
+using SqlSugar;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -9,7 +10,7 @@ using static KalevaAalto.Main;
 
 
 
-namespace KalevaAalto
+namespace KalevaAalto.Models
 {
 
 
@@ -31,7 +32,7 @@ namespace KalevaAalto
         /// <param name="databasename">数据库名称</param>
         public Mysql(string localhost, int port, string username, string password, string databasename)
         {
-            this.db = new SqlSugarClient(new ConnectionConfig()
+            db = new SqlSugarClient(new ConnectionConfig()
             {
                 ConnectionString = $"server={localhost};port={port};user={username};password={password}; database={databasename};",
                 DbType = SqlSugar.DbType.MySql,
@@ -48,8 +49,8 @@ namespace KalevaAalto
         /// </summary>
         ~Mysql()
         {
-            this.db.Close();
-            this.db.Dispose();
+            db.Close();
+            db.Dispose();
         }
 
 
@@ -57,7 +58,7 @@ namespace KalevaAalto
         {
             try
             {
-                return await this.db.Ado.GetDataTableAsync(sql);
+                return await db.Ado.GetDataTableAsync(sql);
 
             }
             catch (Exception error)
@@ -72,7 +73,7 @@ namespace KalevaAalto
         {
             try
             {
-                await this.db.Ado.ExecuteCommandAsync(sql);
+                await db.Ado.ExecuteCommandAsync(sql);
             }
             catch (Exception error)
             {
@@ -133,7 +134,7 @@ namespace KalevaAalto
                     dataRowString.Remove(dataRowString.Length - 1, 1);
                 })
                 );
-            await this.db.Ado.ExecuteCommandAsync($"insert into `{dataTable.TableName}`({columnString.ToString()}) value{dataRowString.ToString()};");
+            await db.Ado.ExecuteCommandAsync($"insert into `{dataTable.TableName}`({columnString.ToString()}) value{dataRowString.ToString()};");
         }
 
 
@@ -141,9 +142,9 @@ namespace KalevaAalto
 
         public async Task ClearTable(string tableName, string[]? conditions = null)
         {
-            if(conditions is null || conditions.Length == 0)
+            if (conditions is null || conditions.Length == 0)
             {
-                await this.db.Ado.ExecuteCommandAsync($"delete from `{tableName}`;") ;
+                await db.Ado.ExecuteCommandAsync($"delete from `{tableName}`;");
             }
             else
             {
@@ -161,11 +162,11 @@ namespace KalevaAalto
                 }
                 conditionsString.Remove(conditionsString.Length - partString.Length, partString.Length);
 
-                await this.db.Ado.ExecuteCommandAsync($"delete from `{tableName}` where {conditionsString.ToString()};");
+                await db.Ado.ExecuteCommandAsync($"delete from `{tableName}` where {conditionsString.ToString()};");
             }
 
 
-            
+
 
         }
 
@@ -173,23 +174,23 @@ namespace KalevaAalto
 
         public async Task ClearTable(DataTable table, string[]? conditions = null)
         {
-            await this.ClearTable(table.TableName, conditions);
-            await this.UploadDataTable(table);
+            await ClearTable(table.TableName, conditions);
+            await UploadDataTable(table);
         }
 
         public async Task<string[]> GetColumnNames(string tableName)
         {
-            DataTable dataTable = await this.Query($"DESC {tableName};");
+            DataTable dataTable = await Query($"DESC {tableName};");
             return dataTable.Rows.Cast<DataRow>().Select(it => (string)it[@"Field"]).ToArray();
         }
 
 
         public async Task Sync(string from_table_name, string to_table_name, string[]? conditions = null)
         {
-            await this.ClearTable(to_table_name, conditions);
+            await ClearTable(to_table_name, conditions);
 
 
-            string[] columns = await this.GetColumnNames(from_table_name);
+            string[] columns = await GetColumnNames(from_table_name);
             StringBuilder columns_str = new StringBuilder();
             foreach (string column in columns)
             {
@@ -218,7 +219,7 @@ namespace KalevaAalto
             }
             sql.Append(";");
 
-            await this.db.Ado.ExecuteCommandAsync(sql.ToString());
+            await db.Ado.ExecuteCommandAsync(sql.ToString());
 
         }
 
@@ -228,9 +229,9 @@ namespace KalevaAalto
 
         public async Task CleanTableRepetitiveContent<T>() where T : class, new()
         {
-            T[] values = (await this.db.Queryable<T>().ToArrayAsync()).AsParallel().ToHashSet().ToArray();
-            await this.db.Deleteable<T>().ExecuteCommandAsync();
-            await this.db.Insertable(values).ExecuteCommandAsync();
+            T[] values = (await db.Queryable<T>().ToArrayAsync()).AsParallel().ToHashSet().ToArray();
+            await db.Deleteable<T>().ExecuteCommandAsync();
+            await db.Insertable(values).ExecuteCommandAsync();
         }
 
 
@@ -241,7 +242,7 @@ namespace KalevaAalto
         public async void Reconnect()
         {
             // 如果MySQL连接已关闭，则尝试重新连接
-            await this.Query(@"select 1;");// 向MySQL服务器发送一个简单的心跳查询
+            await Query(@"select 1;");// 向MySQL服务器发送一个简单的心跳查询
 
         }
 
@@ -251,14 +252,14 @@ namespace KalevaAalto
             try
             {
                 // 打开连接以检查是否连接有效
-                this.db.Ado.Open();
+                db.Ado.Open();
                 // 在这里可以执行其他数据库操作
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Connection error: " + ex.Message);
                 // 在此处处理连接错误，可以记录日志或采取其他适当的措施
-                this.db.Ado.Close();
+                db.Ado.Close();
                 return false;
             }
             // 如果MySQL连接已关闭，则尝试重新连接
@@ -272,7 +273,7 @@ namespace KalevaAalto
         /// <returns>返回数据表的列信息</returns>
         public DbColumnInfo[] GetColumnInfosByTableName(string tableName)
         {
-            List<DbColumnInfo> result = this.db.DbMaintenance.GetColumnInfosByTableName(tableName);
+            List<DbColumnInfo> result = db.DbMaintenance.GetColumnInfosByTableName(tableName);
             return result.ToArray();
         }
 
@@ -294,7 +295,7 @@ namespace KalevaAalto
 
         public string GetClassBuilding(string tableName)
         {
-            DbColumnInfo[] dbColumnInfos = this.GetColumnInfosByTableName(tableName);
+            DbColumnInfo[] dbColumnInfos = GetColumnInfosByTableName(tableName);
 
             StringBuilder result = new StringBuilder();
 
@@ -304,7 +305,7 @@ namespace KalevaAalto
             result.AppendLine($"[SugarTable(@\"{tableName}\")]");
             result.AppendLine($"public class {tableName}");
             result.AppendLine($"{{");
-            foreach(var item in dbColumnInfos)
+            foreach (var item in dbColumnInfos)
             {
                 result.AppendLine($"\t/// <summary>");
                 result.AppendLine($"\t/// 字段名称：{item.DbColumnName}");
@@ -327,7 +328,7 @@ namespace KalevaAalto
                 {
                     result.AppendLine($"\tpublic {mysqlTypeStringToCsharpTypeString[item.DataType]} {item.DbColumnName} {{ get; set; }}");
                 }
-                
+
 
 
                 result.AppendLine();
@@ -359,5 +360,5 @@ namespace KalevaAalto
 
 
 
-    
+
 }
