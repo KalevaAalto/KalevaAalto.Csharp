@@ -14,7 +14,6 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using K4os.Compression.LZ4.Streams.Abstractions;
 using Org.BouncyCastle.Bcpg;
-using static KalevaAalto.Static.Main;
 using System.Data.SqlTypes;
 using KalevaAalto;
 
@@ -483,7 +482,7 @@ namespace KalevaAalto.Models
         /// <returns>返回程序是否运行</returns>
         public bool SaveAsTxt(string path)
         {
-            ToString().SaveToFile(new FileNameInfo(path, name, @"txt"));
+            ToString().SaveToFile(new Models.FileSystem.FileNameInfo(path, name, @"txt"));
             return true;
         }
 
@@ -494,7 +493,7 @@ namespace KalevaAalto.Models
         /// <param name="pattern">判断标题的正则表达式</param>
         public static Novel LoadNovelFromTxt(string fileName, string pattern = @"第\d+章\-.*")
         {
-            FileNameInfo fileNameInfo = new FileNameInfo(fileName);
+            Models.FileSystem.FileNameInfo fileNameInfo = new Models.FileSystem.FileNameInfo(fileName);
             return new Novel(fileNameInfo.Name, GetStringFromFile(fileName), pattern);
         }
 
@@ -521,7 +520,7 @@ namespace KalevaAalto.Models
         /// <returns>返回程序是否运行</returns>
         public bool SaveAsXml(string path)
         {
-            xml.Save(new FileNameInfo(path, name, @"xml").FileName);
+            xml.Save(new Models.FileSystem.FileNameInfo(path, name, @"xml").FileName);
             return true;
         }
 
@@ -687,7 +686,7 @@ namespace KalevaAalto.Models
         {
             XmlDocument xml = new XmlDocument();
             xml.Load(fileName);
-            return LoadNovelFromXml(xml, new FileNameInfo(fileName).Name);
+            return LoadNovelFromXml(xml, new Models.FileSystem.FileNameInfo(fileName).Name);
         }
 
 
@@ -974,7 +973,7 @@ namespace KalevaAalto.Models
         public bool SaveAsEpub(string path)
         {
 
-            FileNameInfo fileNameInfo = new FileNameInfo(path, name, @"epub");
+            Models.FileSystem.FileNameInfo fileNameInfo = new Models.FileSystem.FileNameInfo(path, name, @"epub");
             // 这里你可以将数据写入到 memoryStream 中，例如使用 memoryStream.Write 方法
             // 将MemoryStream的内容写入文件
             File.WriteAllBytes(fileNameInfo.FileName, epub);
@@ -988,7 +987,7 @@ namespace KalevaAalto.Models
         /// <param name="fileName">epub文件的文件路径</param>
         public static Novel LoadNovelFromEpub(string fileName)
         {
-            FileNameInfo fileNameInfo = new FileNameInfo(fileName);
+            Models.FileSystem.FileNameInfo fileNameInfo = new Models.FileSystem.FileNameInfo(fileName);
 
 
 
@@ -1060,7 +1059,7 @@ namespace KalevaAalto.Models
             {
                 throw new Exception(@"找不到文件“content.opf”！");
             }
-            FileNameInfo contentOpfFileNameInfo = new FileNameInfo(contentOpfFileName);
+            Models.FileSystem.FileNameInfo contentOpfFileNameInfo = new Models.FileSystem.FileNameInfo(contentOpfFileName);
             #endregion
 
 
