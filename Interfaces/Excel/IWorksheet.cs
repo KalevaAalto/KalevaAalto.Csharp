@@ -85,13 +85,22 @@ namespace KalevaAalto.Interfaces.Excel
             return result;
         }
 
-        
-        public virtual void Test()
-        {
-            throw new Exception($"函数“void Test()”并未实现；");
-        }
+
+        public abstract void Test();
 
 
+        /// <summary>
+        /// 清除公式
+        /// </summary>
+        public abstract void ClearFormulas();
+        /// <summary>
+        /// 清除图片对象
+        /// </summary>
+        public abstract void CleanDrawings();
+        /// <summary>
+        /// 清除数据验证
+        /// </summary>
+        public abstract void CleanDataValidation();
 
 
 

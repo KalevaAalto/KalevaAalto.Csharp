@@ -23,4 +23,10 @@
     <PackageReference Include="SqlSugarCore" Version="5.1.4.127" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Using Include="KalevaAalto.Static.Main">
+      <Static>True</Static>
+    </Using>
+  </ItemGroup>
+
 </Project>

@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace KalevaAalto
+namespace KalevaAalto.Static
 {
     public static partial class Main
     {
@@ -22,7 +22,7 @@ namespace KalevaAalto
 
         public static object? GetValue(this Type type,object? obj)
         {
-            return new ObjectConvert(type).GetValue(obj);
+            return new Models.ObjectConvert(type).GetValue(obj);
         }
 
 

@@ -12,9 +12,6 @@ using static KalevaAalto.Main;
 
 namespace KalevaAalto.Models
 {
-
-
-
     /// <summary>
     /// 利用SqlSugar整合的个人使用的Mysql类
     /// </summary>

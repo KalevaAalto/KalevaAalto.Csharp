@@ -26,7 +26,7 @@ namespace KalevaAalto.Models.Excel
 }
 
 
-namespace KalevaAalto
+namespace KalevaAalto.Static
 {
     public static partial class Main
     {
