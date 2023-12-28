@@ -7,7 +7,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using static KalevaAalto.Static.Main;
 
 namespace KalevaAalto.Models.Excel
 {
@@ -26,7 +25,7 @@ namespace KalevaAalto.Models.Excel
 }
 
 
-namespace KalevaAalto.Static
+namespace KalevaAalto
 {
     public static partial class Main
     {

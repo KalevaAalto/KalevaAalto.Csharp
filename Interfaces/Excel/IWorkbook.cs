@@ -13,8 +13,9 @@ using KalevaAalto.Models.Excel.Enums;
 
 namespace KalevaAalto.Interfaces.Excel
 {
-    public abstract class IWorkbook
+    public abstract class IWorkbook :IDisposable
     {
+        
         public string FileName { get; set; }
         public IWorkbook(string fileName)
         {
@@ -186,12 +187,13 @@ namespace KalevaAalto.Interfaces.Excel
             return worksheet;
         }
 
+        public abstract void Dispose();
 
     }
 }
 
 
-namespace KalevaAalto.Static
+namespace KalevaAalto
 {
     public static partial class Main
     {

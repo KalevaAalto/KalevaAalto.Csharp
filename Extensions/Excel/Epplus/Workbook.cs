@@ -13,7 +13,7 @@ namespace KalevaAalto.Extensions.Excel.Epplus
     public class Workbook : IWorkbook
     {
         private ExcelPackage? package = null;
-
+        
 
         public Workbook(string fileName) : base(fileName) { }
         protected override void Init()
@@ -42,7 +42,9 @@ namespace KalevaAalto.Extensions.Excel.Epplus
             return new Worksheet(package!.Workbook.Worksheets.Add(name));
         }
 
-
-
+        public override void Dispose()
+        {
+            this.package?.Dispose();
+        }
     }
 }

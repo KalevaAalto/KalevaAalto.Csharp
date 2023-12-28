@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Security.Cryptography;
 
-namespace KalevaAalto.Static;
+namespace KalevaAalto;
 
 /// <summary>
 /// 加密工具

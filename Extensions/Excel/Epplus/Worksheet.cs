@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static KalevaAalto.Main;
+using static KalevaAalto.Static.Main;
 
 namespace KalevaAalto.Extensions.Excel.Epplus
 {
@@ -59,6 +59,22 @@ namespace KalevaAalto.Extensions.Excel.Epplus
             worksheet.PrinterSettings.FitToPage = true;
             //worksheet.PrinterSettings.FitToWidth = 1;
             //worksheet.PrinterSettings.FitToHeight = 1;
+        }
+
+
+        public override void CleanDataValidation()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void CleanDrawings()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void ClearFormulas()
+        {
+            throw new NotImplementedException();
         }
 
 

@@ -17,7 +17,7 @@ using System.Text.RegularExpressions;
 using System.Drawing;
 using KalevaAalto.Models.Excel;
 
-namespace KalevaAalto.Static;
+namespace KalevaAalto;
 
 public static partial class Main
 {

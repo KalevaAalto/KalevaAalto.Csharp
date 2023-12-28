@@ -10,7 +10,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using static KalevaAalto.Static.Main;
 using KalevaAalto.Models.Excel.Enums;
 
 
@@ -163,7 +162,7 @@ namespace KalevaAalto.Models.Excel
 
 
 
-namespace KalevaAalto.Static
+namespace KalevaAalto
 {
     public static partial class Main
     {

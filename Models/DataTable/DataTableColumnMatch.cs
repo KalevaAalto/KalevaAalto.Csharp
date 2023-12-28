@@ -38,7 +38,7 @@ namespace KalevaAalto.Models.DataTable
 }
 
 
-namespace KalevaAalto.Static
+namespace KalevaAalto
 {
     public static partial class Main
     {

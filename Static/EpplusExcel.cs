@@ -13,29 +13,15 @@ using System.Data;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Text.RegularExpressions;
-using static KalevaAalto.Main;
 using System.Xml.Linq;
 using System.Xml;
 using KalevaAalto.Models;
 
 
-namespace KalevaAalto.Static;
+namespace KalevaAalto;
 
 public static partial class Main
 {
-    #region Style
-    public static void SetBorder(this ExcelStyle excelStyle)
-    {
-
-    }
-
-
-
-    #endregion
-
-
-
-
 
 
 
@@ -45,7 +31,7 @@ public static partial class Main
     /// <summary>
     /// 从文件中获取Excel文档
     /// </summary>
-    public static ExcelPackage GetExcelPackage(this FileNameInfo fileNameInfo)
+    public static ExcelPackage GetExcelPackage(this Models.FileSystem.FileNameInfo fileNameInfo)
     {
         return new ExcelPackage(fileNameInfo.FileInfo);
     }
@@ -55,7 +41,7 @@ public static partial class Main
     /// 将Excel文档另存为至文件中
     /// </summary>
     /// <param name="package">要保存的Excel文档</param>
-    public static void SaveAs(this ExcelPackage package,FileNameInfo fileNameInfo)
+    public static void SaveAs(this ExcelPackage package,Models.FileSystem.FileNameInfo fileNameInfo)
     {
         package.SaveAs(fileNameInfo.FileInfo);
     }
@@ -67,27 +53,7 @@ public static partial class Main
 
 
 
-    /// <summary>
-    /// 单元格坐标
-    /// </summary>
-    public class CellPos
-    {
-        public int row { set; get; } = 0;
-        public int column { set; get; } = 0;
-        public CellPos(int row, int column)
-        {
-            this.row = row;
-            this.column = column;
-        }
 
-        public bool Status()
-        {
-            return this.row > 0 && this.column > 0;
-        }
-
-        public readonly static CellPos errorCellPos = new CellPos(0, 0);
-
-    }
 
 
     /// <summary>
@@ -96,19 +62,14 @@ public static partial class Main
     /// <param name="worksheet">工作表</param>
     /// <param name="cellPos">单元格</param>
     /// <returns>返回单元格是否为空</returns>
-    public static bool IsCellEmpty(this ExcelWorksheet worksheet,CellPos cellPos)
+    public static bool IsCellEmpty(this ExcelWorksheet worksheet,Models.Excel.CellPos cellPos)
     {
-        if (!cellPos.Status())
-        {
-            return true;
-        }
 
-        object? value = worksheet.GetValue(cellPos.row, cellPos.column);
+        object? value = worksheet.GetValue(cellPos.Row, cellPos.Column);
         if(value is null || string.IsNullOrEmpty(value.ToString()))
         {
             return true;
         }
-
         return false;
 
     }
@@ -123,7 +84,7 @@ public static partial class Main
     /// <returns>返回单元格是否为空</returns>
     public static bool IsCellEmpty(this ExcelWorksheet worksheet, int row,int column)
     {
-        return worksheet.IsCellEmpty(new CellPos(row,column));
+        return worksheet.IsCellEmpty(new Models.Excel.CellPos(row,column));
     }
 
 
@@ -143,7 +104,7 @@ public static partial class Main
     /// </summary>
     /// <param name="worksheet">工作表</param>
     /// <returns>返回工作表的起始单元格坐标</returns>
-    public static CellPos GetStartCellPos(this ExcelWorksheet worksheet)
+    public static Models.Excel.CellPos GetStartCellPos(this ExcelWorksheet worksheet)
     {
         for(int row = 0; row<500; row++)
         {
@@ -151,13 +112,13 @@ public static partial class Main
             {
                 if (!worksheet.IsCellEmpty(row,column))
                 {
-                    return new CellPos(row, column);
+                    return new Models.Excel.CellPos(row, column);
                 }
             }
         }
 
 
-        return CellPos.errorCellPos;
+        throw new Exception(@"未找到起始坐标；");
     }
 
     /// <summary>
@@ -166,7 +127,7 @@ public static partial class Main
     /// <param name="worksheet">工作表</param>
     /// <param name="startString">起始点标志字符串</param>
     /// <returns>返回工作表的起始单元格坐标</returns>
-    public static CellPos GetStartCellPos(this ExcelWorksheet worksheet,string startString)
+    public static Models.Excel.CellPos GetStartCellPos(this ExcelWorksheet worksheet,string startString)
     {
         if (string.IsNullOrEmpty(startString))
         {
@@ -179,25 +140,18 @@ public static partial class Main
             {
                 if (!worksheet.IsCellEmpty(row, column) && worksheet.GetValue<string>(row,column) == startString)
                 {
-                    return new CellPos(row, column);
+                    return new Models.Excel.CellPos(row, column);
                 }
             }
         }
 
 
-        return CellPos.errorCellPos;
+        throw new Exception(@"未找到起始坐标；");
     }
 
 
 
-    public static DataTable GetTableFromSheet(string file_name, string sheet_name)
-    {
 
-        var package = new ExcelPackage(new FileInfo(file_name));
-
-        var worksheet = package.Workbook.Worksheets[sheet_name];
-        return worksheet.ToDataTable();
-    }
 
 
 
@@ -299,41 +253,6 @@ public static partial class Main
 
         return table;
     }
-
-
-    /// <summary>
-    /// 读取worksheet，将其录入至DataTable中
-    /// </summary>
-    /// <param name="worksheet">工作表</param>
-    /// <param name="startString"></param>
-    /// <returns></returns>
-    public static DataTable ToDataTable(this ExcelWorksheet worksheet,string startString = Main.emptyString)
-    {
-        CellPos startCellPos = worksheet.GetStartCellPos(startString);
-
-        //定位
-        int columnsCount = int.MaxValue;
-        for (int columnNumber = startCellPos.column; columnNumber <= int.MaxValue; columnNumber++)
-        {
-            if (worksheet.IsCellEmpty(startCellPos.row, columnNumber))
-            {
-                columnsCount = columnNumber - 1;
-                break;
-            }
-        }
-
-        int rowsCount = int.MaxValue;
-        for (int rowsNumber = startCellPos.row; rowsNumber <= int.MaxValue; rowsNumber++)
-        {
-            if (worksheet.IsCellEmpty(rowsNumber, startCellPos.column))
-            {
-                rowsCount = rowsNumber - 1;
-                break;
-            }
-        }
-        return worksheet.Cells[startCellPos.row, startCellPos.column, rowsCount, columnsCount].ExcelRangeToDataTable();
-    }
-
 
 
 

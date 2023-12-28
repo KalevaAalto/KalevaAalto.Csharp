@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace KalevaAalto.Static;
+namespace KalevaAalto;
 
 /// <summary>
 /// KalevaAalto个人的数学专用库

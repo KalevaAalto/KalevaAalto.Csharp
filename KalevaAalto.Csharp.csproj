@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="KalevaAalto.Static.Main">
+    <Using Include="KalevaAalto.Main">
       <Static>True</Static>
     </Using>
   </ItemGroup>
