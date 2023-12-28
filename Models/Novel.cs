@@ -16,8 +16,9 @@ using K4os.Compression.LZ4.Streams.Abstractions;
 using Org.BouncyCastle.Bcpg;
 using static KalevaAalto.Main;
 using System.Data.SqlTypes;
+using KalevaAalto;
 
-namespace KalevaAalto
+namespace KalevaAalto.Models
 {
 
     public class Title
@@ -67,7 +68,7 @@ namespace KalevaAalto
         public NovelChapter(string name, string content = emptyString)
         {
             this.name = name;
-            this.Append(content);
+            Append(content);
         }
 
         /// <summary>
@@ -78,7 +79,7 @@ namespace KalevaAalto
         public NovelChapter(string name, string[] contents)
         {
             this.name = name;
-            this.Append(contents);
+            Append(contents);
         }
 
 
@@ -88,7 +89,7 @@ namespace KalevaAalto
         /// <param name="content">要添加的内容</param>
         public void Append(string content)
         {
-            this.paragraphs.AddRange(Split(content));
+            paragraphs.AddRange(Split(content));
         }
 
         /// <summary>
@@ -97,9 +98,9 @@ namespace KalevaAalto
         /// <param name="contents">要添加的内容</param>
         public void Append(string[] contents)
         {
-            foreach(string content in contents)
+            foreach (string content in contents)
             {
-                this.paragraphs.AddRange(Split(content));
+                paragraphs.AddRange(Split(content));
             }
         }
 
@@ -109,7 +110,7 @@ namespace KalevaAalto
         /// </summary>
         public void Clear()
         {
-            this.paragraphs.Clear();
+            paragraphs.Clear();
         }
 
 
@@ -120,11 +121,11 @@ namespace KalevaAalto
         /// <returns>返回小说章节的字符串形式</returns>
         public string ToString(string lineBreak = "\n    ")
         {
-            StringBuilder rs = new StringBuilder(this.name);
+            StringBuilder rs = new StringBuilder(name);
 
 
             //添加内容
-            foreach (string line in this.paragraphs)
+            foreach (string line in paragraphs)
             {
                 rs.Append(lineBreak);
                 rs.Append(line);
@@ -143,7 +144,7 @@ namespace KalevaAalto
             get
             {
                 int result = 0;
-                foreach (string content in this.paragraphs)
+                foreach (string content in paragraphs)
                 {
                     result += content.Length;
                 }
@@ -167,7 +168,7 @@ namespace KalevaAalto
                     {
                         XmlElement title = text_xml.CreateElement(@"title");
                         head.AppendChild(title);
-                        title.InnerText = this.name;
+                        title.InnerText = name;
                     }
 
                     //添加章节内容
@@ -176,9 +177,9 @@ namespace KalevaAalto
                     {
                         XmlElement h2 = text_xml.CreateElement(@"h2");
                         body.AppendChild(h2);
-                        h2.InnerText = this.name;
+                        h2.InnerText = name;
 
-                        foreach (string line in this.paragraphs)
+                        foreach (string line in paragraphs)
                         {
                             XmlElement p = text_xml.CreateElement(@"p");
                             body.AppendChild(p);
@@ -235,7 +236,7 @@ namespace KalevaAalto
         {
             get
             {
-                return new NovelChapter(@"序章",this.prologue.ToArray());
+                return new NovelChapter(@"序章", prologue.ToArray());
             }
         }
 
@@ -255,7 +256,7 @@ namespace KalevaAalto
         //获取小说内容
         public Novel(string novelName, string content, string pattern)
         {
-            this.name = novelName;
+            name = novelName;
             string[] contentLines = NovelChapter.Split(content);
             Regex regex = new Regex("^" + pattern + "$");
 
@@ -263,22 +264,22 @@ namespace KalevaAalto
 
 
             //获取小说序章
-            for (; pos < contentLines.Length && !regex.IsMatch(contentLines[pos]);pos++)
+            for (; pos < contentLines.Length && !regex.IsMatch(contentLines[pos]); pos++)
             {
-                this.prologue.Add(contentLines[pos]);
+                prologue.Add(contentLines[pos]);
             }
 
 
             //获取小说章节
-            for (; pos < contentLines.Length;pos++)
+            for (; pos < contentLines.Length; pos++)
             {
                 if (regex.IsMatch(contentLines[pos]))
                 {
-                    this.chapters.Add(new NovelChapter(contentLines[pos]));
+                    chapters.Add(new NovelChapter(contentLines[pos]));
                 }
                 else
                 {
-                    this.chapters.Last().Append(contentLines[pos]);
+                    chapters.Last().Append(contentLines[pos]);
                 }
                 pos++;
             }
@@ -292,12 +293,12 @@ namespace KalevaAalto
         {
             StringBuilder result = new StringBuilder();
             //添加序章
-            foreach (string line in this.prologue)
+            foreach (string line in prologue)
             {
                 result.Append(lineBreak);
                 result.Append(line);
             }
-            
+
             return result.ToString();
         }
 
@@ -308,11 +309,11 @@ namespace KalevaAalto
             StringBuilder result = new StringBuilder(lineBreak + lineBreak);
 
             //添加序章
-            result.Append(this.PrologueString());
+            result.Append(PrologueString());
 
             result.Append(lineBreak + lineBreak);
 
-            foreach (NovelChapter chapter in this.chapters)
+            foreach (NovelChapter chapter in chapters)
             {
                 result.Append(chapter.ToString(lineBreak));
                 result.Append(lineBreak + lineBreak);
@@ -330,7 +331,7 @@ namespace KalevaAalto
             get
             {
                 int result = 0;
-                foreach (string line in this.prologue)
+                foreach (string line in prologue)
                 {
                     result += line.Length;
                 }
@@ -345,8 +346,8 @@ namespace KalevaAalto
         {
             get
             {
-                int result = this.prologueLength;
-                foreach (NovelChapter chapter in this.chapters)
+                int result = prologueLength;
+                foreach (NovelChapter chapter in chapters)
                 {
                     result += chapter.name.Length;
                     result += chapter.Length;
@@ -363,13 +364,13 @@ namespace KalevaAalto
         {
             get
             {
-                if (index <= this.chapters.Count && index > 0)
+                if (index <= chapters.Count && index > 0)
                 {
-                    return this.chapters[index - 1];
+                    return chapters[index - 1];
                 }
                 else
                 {
-                    return new NovelChapter("序章", this.prologue.ToArray());
+                    return new NovelChapter("序章", prologue.ToArray());
                 }
             }
 
@@ -381,14 +382,14 @@ namespace KalevaAalto
         {
             get
             {
-                foreach (NovelChapter chapter in this.chapters)
+                foreach (NovelChapter chapter in chapters)
                 {
                     if (chapter.name == name)
                     {
                         return chapter;
                     }
                 }
-                return new NovelChapter("序章", this.prologue.ToArray());
+                return new NovelChapter("序章", prologue.ToArray());
             }
 
         }
@@ -400,16 +401,16 @@ namespace KalevaAalto
         /// <param name="name">要删除的章节名</param>
         public void deleteChapter(string name)
         {
-            if(name == @"序章")
+            if (name == @"序章")
             {
-                this.prologue.Clear();
+                prologue.Clear();
                 return;
             }
-            foreach (NovelChapter chapter in this.chapters)
+            foreach (NovelChapter chapter in chapters)
             {
-                if (chapter.name == name) 
-                { 
-                    this.chapters.Remove(chapter); break; 
+                if (chapter.name == name)
+                {
+                    chapters.Remove(chapter); break;
                 }
             }
         }
@@ -420,19 +421,19 @@ namespace KalevaAalto
         /// <param name="name">要删除的章节序号</param>
         public void deleteChapter(int index)
         {
-            if (index <= this.chapters.Count && index > 0)
+            if (index <= chapters.Count && index > 0)
             {
-                this.chapters.Remove(this.chapters[index - 1]);
+                chapters.Remove(chapters[index - 1]);
             }
-            else if(index == 0)
+            else if (index == 0)
             {
-                this.prologue.Clear();
+                prologue.Clear();
             }
         }
 
 
 
-        
+
 
 
         /// <summary>
@@ -469,7 +470,7 @@ namespace KalevaAalto
         {
             get
             {
-                string text = this.ToString();
+                string text = ToString();
                 // 将字符串转换为字节数组
                 return text.ToByte();
             }
@@ -482,7 +483,7 @@ namespace KalevaAalto
         /// <returns>返回程序是否运行</returns>
         public bool SaveAsTxt(string path)
         {
-            this.ToString().SaveToFile(new FileNameInfo(path,this.name,@"txt"));
+            ToString().SaveToFile(new FileNameInfo(path, name, @"txt"));
             return true;
         }
 
@@ -491,7 +492,7 @@ namespace KalevaAalto
         /// </summary>
         /// <param name="fileName">要读取的文件名称</param>
         /// <param name="pattern">判断标题的正则表达式</param>
-        public static Novel LoadNovelFromTxt(string fileName,string pattern = @"第\d+章\-.*")
+        public static Novel LoadNovelFromTxt(string fileName, string pattern = @"第\d+章\-.*")
         {
             FileNameInfo fileNameInfo = new FileNameInfo(fileName);
             return new Novel(fileNameInfo.Name, GetStringFromFile(fileName), pattern);
@@ -503,13 +504,13 @@ namespace KalevaAalto
         /// </summary>
         /// <param name="fileName">要读取的文件名称</param>
         /// <param name="pattern">判断标题的正则表达式</param>
-        public static Novel LoadNovelFromTxt(string novelName,byte[] bytes, string pattern = @"第\d+章\-.*")
+        public static Novel LoadNovelFromTxt(string novelName, byte[] bytes, string pattern = @"第\d+章\-.*")
         {
             using (MemoryStream memoryStream = new MemoryStream(bytes))
             {
                 Encoding encoding = memoryStream.GetEncoding();
                 string content = encoding.GetString(memoryStream.ToArray());
-                return new Novel(novelName,content, pattern);
+                return new Novel(novelName, content, pattern);
             }
         }
 
@@ -520,7 +521,7 @@ namespace KalevaAalto
         /// <returns>返回程序是否运行</returns>
         public bool SaveAsXml(string path)
         {
-            this.xml.Save(new Main.FileNameInfo(path,this.name,@"xml").FileName);
+            xml.Save(new FileNameInfo(path, name, @"xml").FileName);
             return true;
         }
 
@@ -536,7 +537,7 @@ namespace KalevaAalto
                 #region 添加名称
                 XmlElement title = xml.CreateElement(@"title");
                 novel.AppendChild(title);
-                title.InnerText = this.name;
+                title.InnerText = name;
                 #endregion
 
                 #region 添加序章
@@ -585,7 +586,7 @@ namespace KalevaAalto
         /// 从XML文档中获取小说
         /// </summary>
         /// <param name="xml">小说的XML文档</param>
-        public static Novel LoadNovelFromXml(XmlDocument xml, string novelName = Main.emptyString)
+        public static Novel LoadNovelFromXml(XmlDocument xml, string novelName = emptyString)
         {
             Novel result = new Novel(novelName);
 
@@ -665,7 +666,7 @@ namespace KalevaAalto
         /// 从XML文档中获取小说
         /// </summary>
         /// <param name="bytes">小说的XML文档的二进制形式</param>
-        public static Novel LoadNovelFromXml(byte[] bytes, string novelName = Main.emptyString)
+        public static Novel LoadNovelFromXml(byte[] bytes, string novelName = emptyString)
         {
             using (MemoryStream memoryStream = new MemoryStream(bytes))
             {
@@ -686,7 +687,7 @@ namespace KalevaAalto
         {
             XmlDocument xml = new XmlDocument();
             xml.Load(fileName);
-            return LoadNovelFromXml(xml,new Main.FileNameInfo(fileName).Name);
+            return LoadNovelFromXml(xml, new FileNameInfo(fileName).Name);
         }
 
 
@@ -745,7 +746,7 @@ namespace KalevaAalto
 
                             XmlElement title = content_opf_xml.CreateElement(@"dc", @"title", @"http://purl.org/dc/elements/1.1/");
                             metadata.AppendChild(title);
-                            title.InnerText = this.name;
+                            title.InnerText = name;
 
                             XmlElement meta = content_opf_xml.CreateElement(@"meta");
                             metadata.AppendChild(meta);
@@ -771,7 +772,7 @@ namespace KalevaAalto
                             item.SetAttribute(@"id", @"ncx");
                             item.SetAttribute(@"media-type", @"application/x-dtbncx+xml");
 
-                            for (int i = 0; i <= this.chapters.Count; i++)
+                            for (int i = 0; i <= chapters.Count; i++)
                             {
                                 item = content_opf_xml.CreateElement(@"item");
                                 manifest.AppendChild(item);
@@ -787,7 +788,7 @@ namespace KalevaAalto
                         package.AppendChild(spine);
                         spine.SetAttribute(@"toc", @"ncx");
                         {
-                            for (int i = 0; i <= this.chapters.Count; i++)
+                            for (int i = 0; i <= chapters.Count; i++)
                             {
                                 XmlElement itemref = content_opf_xml.CreateElement(@"itemref");
                                 spine.AppendChild(itemref);
@@ -842,7 +843,7 @@ namespace KalevaAalto
                     {
                         XmlElement text = toc_ncx_xml.CreateElement(@"docTitle");
                         docTitle.AppendChild(text);
-                        text.InnerText = this.name;
+                        text.InnerText = name;
                     }
 
 
@@ -873,9 +874,9 @@ namespace KalevaAalto
                         };
 
                         navMap.AppendChild(lambda(0, @"序章"));
-                        for (int i = 1; i <= this.chapters.Count; i++)
+                        for (int i = 1; i <= chapters.Count; i++)
                         {
-                            navMap.AppendChild(lambda(i, this.chapters[i - 1].name));
+                            navMap.AppendChild(lambda(i, chapters[i - 1].name));
                         }
 
 
@@ -888,8 +889,8 @@ namespace KalevaAalto
 
 
                 List<XmlDocument> xmls = new List<XmlDocument>();
-                xmls.Add(this.prologueChapter.htmlDocument);
-                foreach (NovelChapter chapter in this.chapters)
+                xmls.Add(prologueChapter.htmlDocument);
+                foreach (NovelChapter chapter in chapters)
                 {
                     xmls.Add(chapter.htmlDocument);
                 }
@@ -960,7 +961,7 @@ namespace KalevaAalto
 
                     return zipStream.ToArray();
                 }
-                    
+
 
             }
         }
@@ -973,10 +974,10 @@ namespace KalevaAalto
         public bool SaveAsEpub(string path)
         {
 
-            Main.FileNameInfo fileNameInfo = new Main.FileNameInfo(path,this.name,@"epub");
+            FileNameInfo fileNameInfo = new FileNameInfo(path, name, @"epub");
             // 这里你可以将数据写入到 memoryStream 中，例如使用 memoryStream.Write 方法
             // 将MemoryStream的内容写入文件
-            File.WriteAllBytes(fileNameInfo.FileName, this.epub);
+            File.WriteAllBytes(fileNameInfo.FileName, epub);
             return true;
 
         }
@@ -987,10 +988,10 @@ namespace KalevaAalto
         /// <param name="fileName">epub文件的文件路径</param>
         public static Novel LoadNovelFromEpub(string fileName)
         {
-            Main.FileNameInfo fileNameInfo = new Main.FileNameInfo(fileName);
+            FileNameInfo fileNameInfo = new FileNameInfo(fileName);
 
 
-            
+
             //检查后缀名是否为epub
             if (!fileNameInfo.Status || fileNameInfo.Suffix != @"epub")
             {
@@ -1003,17 +1004,17 @@ namespace KalevaAalto
                 throw new Exception($"文件“{fileNameInfo.FileName}”不存在！");
             }
 
-            
+
             try
             {
-                return LoadNovelFromEpub(ZipFile.OpenRead(fileNameInfo.FileName),fileNameInfo.Name);
+                return LoadNovelFromEpub(ZipFile.OpenRead(fileNameInfo.FileName), fileNameInfo.Name);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw new Exception($"读取文件“{fileName}”的过程中出现错误：{ex.Message}");
             }
 
-            
+
         }
 
         /// <summary>
@@ -1021,7 +1022,7 @@ namespace KalevaAalto
         /// </summary>
         /// <param name="zipArchive">epub文件的zip文件流</param>
         /// <param name="novelName">小说标题名称</param>
-        public static Novel LoadNovelFromEpub(ZipArchive zipArchive,string novelName = Main.emptyString)
+        public static Novel LoadNovelFromEpub(ZipArchive zipArchive, string novelName = emptyString)
         {
             Novel result = new Novel(novelName);
             XmlDocument xml = new XmlDocument();
@@ -1059,7 +1060,7 @@ namespace KalevaAalto
             {
                 throw new Exception(@"找不到文件“content.opf”！");
             }
-            Main.FileNameInfo contentOpfFileNameInfo = new Main.FileNameInfo(contentOpfFileName);
+            FileNameInfo contentOpfFileNameInfo = new FileNameInfo(contentOpfFileName);
             #endregion
 
 
@@ -1122,7 +1123,7 @@ namespace KalevaAalto
             #endregion
 
             //throw new Exception(herfs.Count.ToString());
-            
+
             #endregion
 
 
@@ -1145,11 +1146,12 @@ namespace KalevaAalto
                             xml.LoadXml(content);
                         }
                     }
-                }catch
+                }
+                catch
                 {
                     throw new Exception($"读取文件“{herf}”时出错！");
                 }
-                
+
 
                 XmlNode? titleNode = xml.SelectSingleNode(@"/html/head/title");
                 XmlNodeList? pNodes = xml.SelectNodes(@"/html/body/p");
@@ -1160,7 +1162,7 @@ namespace KalevaAalto
                 {
                     novelChapter.name = titleNode.InnerText;
                 }
-                
+
                 #endregion
 
 
@@ -1199,7 +1201,7 @@ namespace KalevaAalto
         /// </summary>
         /// <param name="zipArchive">epub文件的二进制模式</param>
         /// <param name="novelName">小说标题名称</param>
-        public static Novel LoadNovelFromEpub(byte[] bytes, string novelName = Main.emptyString)
+        public static Novel LoadNovelFromEpub(byte[] bytes, string novelName = emptyString)
         {
             // 将 byte[] 转换为 ZipArchive
             using (MemoryStream memoryStream = new MemoryStream(bytes))
