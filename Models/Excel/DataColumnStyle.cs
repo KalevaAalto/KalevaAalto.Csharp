@@ -10,7 +10,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using static KalevaAalto.Main;
+using static KalevaAalto.Static.Main;
 using KalevaAalto.Models.Excel.Enums;
 
 

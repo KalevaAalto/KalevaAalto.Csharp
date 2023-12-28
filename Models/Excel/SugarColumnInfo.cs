@@ -7,7 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using static KalevaAalto.Main;
+using static KalevaAalto.Static.Main;
 
 namespace KalevaAalto.Models.Excel
 {

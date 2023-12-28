@@ -54,7 +54,7 @@ namespace KalevaAalto.Models
         }
 
 
-        public async Task<DataTable> Query(string sql)
+        public async Task<System.Data.DataTable> Query(string sql)
         {
             try
             {
@@ -83,14 +83,16 @@ namespace KalevaAalto.Models
 
 
 
-        public async Task UploadDataTable(DataTable dataTable)
+        public async Task UploadDataTable(System.Data.DataTable dataTable)
         {
+            if(dataTable.Columns.Count == 0)
+            {
+                throw new Exception($"表单“{dataTable.TableName}”没有任何字段；");
+            }
             if (dataTable.Rows.Count == 0)
             {
                 return;
             }
-
-
 
             StringBuilder columnString = new StringBuilder();
             StringBuilder dataRowString = new StringBuilder();
@@ -134,7 +136,7 @@ namespace KalevaAalto.Models
                     dataRowString.Remove(dataRowString.Length - 1, 1);
                 })
                 );
-            await db.Ado.ExecuteCommandAsync($"insert into `{dataTable.TableName}`({columnString.ToString()}) value{dataRowString.ToString()};");
+            await db.Ado.ExecuteCommandAsync($"insert into `{dataTable.TableName}`({columnString}) value{dataRowString};");
         }
 
 
@@ -172,7 +174,7 @@ namespace KalevaAalto.Models
 
 
 
-        public async Task ClearTable(DataTable table, string[]? conditions = null)
+        public async Task ClearTable(System.Data.DataTable table, string[]? conditions = null)
         {
             await ClearTable(table.TableName, conditions);
             await UploadDataTable(table);
@@ -180,7 +182,7 @@ namespace KalevaAalto.Models
 
         public async Task<string[]> GetColumnNames(string tableName)
         {
-            DataTable dataTable = await Query($"DESC {tableName};");
+            System.Data.DataTable dataTable = await Query($"DESC {tableName};");
             return dataTable.Rows.Cast<DataRow>().Select(it => (string)it[@"Field"]).ToArray();
         }
 

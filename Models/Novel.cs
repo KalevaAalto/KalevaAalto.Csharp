@@ -14,7 +14,7 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using K4os.Compression.LZ4.Streams.Abstractions;
 using Org.BouncyCastle.Bcpg;
-using static KalevaAalto.Main;
+using static KalevaAalto.Static.Main;
 using System.Data.SqlTypes;
 using KalevaAalto;
 

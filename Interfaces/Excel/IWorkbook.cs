@@ -21,11 +21,6 @@ namespace KalevaAalto.Interfaces.Excel
             this.FileName = fileName;
             this.Init();
         }
-        public IWorkbook(string path,string name) 
-        { 
-            this.FileName = Path.Combine(path,name);
-            this.Init();
-        }
         protected abstract void Init();
         public bool FileExist { get => File.Exists(this.FileName); }
         public abstract IWorksheet[] Worksheets { get; }
@@ -196,7 +191,7 @@ namespace KalevaAalto.Interfaces.Excel
 }
 
 
-namespace KalevaAalto
+namespace KalevaAalto.Static
 {
     public static partial class Main
     {

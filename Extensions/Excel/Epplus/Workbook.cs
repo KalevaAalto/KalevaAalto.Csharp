@@ -16,7 +16,6 @@ namespace KalevaAalto.Extensions.Excel.Epplus
 
 
         public Workbook(string fileName) : base(fileName) { }
-        public Workbook(string path, string name) : base(path, name) { }
         protected override void Init()
         {
             if (FileExist)
