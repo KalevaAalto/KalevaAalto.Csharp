@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using KalevaAalto.Interfaces.Excel;
+using KalevaAalto.Models.Excel;
 using OfficeOpenXml;
 
 namespace KalevaAalto.Extensions.Excel.Epplus

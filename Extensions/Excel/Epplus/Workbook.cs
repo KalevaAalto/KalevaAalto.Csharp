@@ -1,5 +1,5 @@
 ﻿using KalevaAalto;
-using KalevaAalto.Interfaces.Excel;
+using KalevaAalto.Models.Excel;
 using Npgsql.Replication;
 using OfficeOpenXml;
 using System;

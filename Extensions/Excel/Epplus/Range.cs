@@ -1,5 +1,5 @@
-﻿using KalevaAalto.Interfaces.Excel;
-using KalevaAalto.Models.Excel;
+﻿using KalevaAalto.Models.Excel;
+using KalevaAalto.Models.Excel.Enums;
 using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
@@ -14,6 +14,7 @@ namespace KalevaAalto.Extensions.Excel.Epplus
         private readonly ExcelWorksheet worksheet;
         private ExcelRange rng=> this.worksheet.Cells[this.pos.StartPos.Row,this.pos.StartPos.Column,this.pos.EndPos.Row,this.pos.EndPos.Column];
         private readonly RangePos pos;
+        public override ErrorType ErrorType => Cell.GetErrorType(this.Value);
 
         internal Range(ExcelRange rng) 
         {

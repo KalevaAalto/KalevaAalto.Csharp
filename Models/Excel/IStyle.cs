@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using KalevaAalto.Models.Excel.Enums;
 
-namespace KalevaAalto.Interfaces.Excel
+namespace KalevaAalto.Models.Excel
 {
 
     public abstract class IStyle
@@ -15,7 +15,7 @@ namespace KalevaAalto.Interfaces.Excel
         public abstract Color BorderColor { get; set; }
         public abstract BorderStyle BorderStyle { get; set; }
         public abstract Color FontColor { get; set; }
-        public abstract FontWeight FontWeight { get; set; } 
+        public abstract FontWeight FontWeight { get; set; }
         public abstract HorizontalAlignment HorizontalAlignment { get; set; }
         public abstract VerticalAlignment VerticalAlignment { get; set; }
         public abstract string NumberFormatString { get; set; }

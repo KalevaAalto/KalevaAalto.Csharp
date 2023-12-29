@@ -1,29 +1,31 @@
-﻿using System;
+﻿using KalevaAalto.Models.Excel.Enums;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using KalevaAalto.Models.Excel;
 
-namespace KalevaAalto.Interfaces.Excel
+namespace KalevaAalto.Models.Excel
 {
     public abstract class IRange
     {
         public abstract RangePos Pos { get; }
 
-        public int RowCount { get=>this.Pos.EndPos.Row - this.Pos.StartPos.Row + 1; }
-        public int ColumnCount { get => this.Pos.EndPos.Column - this.Pos.StartPos.Column + 1; }
+        public int RowCount { get => Pos.EndPos.Row - Pos.StartPos.Row + 1; }
+        public int ColumnCount { get => Pos.EndPos.Column - Pos.StartPos.Column + 1; }
         public abstract IStyle Style { get; }
+        public abstract ErrorType ErrorType { get; }
+        public bool IsError => this.ErrorType != ErrorType.None;
         public IRow[] Rows
         {
-            get 
-            { 
-                List<IRow> result = new List<IRow> (this.RowCount);
-                for (int row = 1; row <= this.RowCount; row++)
+            get
+            {
+                List<IRow> result = new List<IRow>(RowCount);
+                for (int row = 1; row <= RowCount; row++)
                 {
-                    result.Add(this[row,1].Row);
+                    result.Add(this[row, 1].Row);
                 }
                 return result.ToArray();
             }
@@ -32,8 +34,8 @@ namespace KalevaAalto.Interfaces.Excel
         {
             get
             {
-                List<IColumn> result = new List<IColumn>(this.RowCount);
-                for (int row = 1; row <= this.RowCount; row++)
+                List<IColumn> result = new List<IColumn>(RowCount);
+                for (int row = 1; row <= RowCount; row++)
                 {
                     result.Add(this[row, 1].Column);
                 }
@@ -42,36 +44,36 @@ namespace KalevaAalto.Interfaces.Excel
         }
         public ICell this[CellPos cellPos]
         {
-            get 
-            { 
-                if(cellPos.Column>this.ColumnCount || cellPos.Row > this.RowCount)
+            get
+            {
+                if (cellPos.Column > ColumnCount || cellPos.Row > RowCount)
                 {
                     throw new Exception(@"行号或列号越界");
                 }
-                return this.GetCell(cellPos);
+                return GetCell(cellPos);
             }
         }
         public abstract bool Merge { get; set; }
-        public ICell this[int row,int column] => this[new CellPos(row, column)];
+        public ICell this[int row, int column] => this[new CellPos(row, column)];
         public object? Value { get => this[CellPos.DefaultStartPos].Value; set => this[CellPos.DefaultStartPos].Value = value; }
 
         private readonly static Regex regexColumnName = new Regex(@"^(?<columnName>\.+?)(\d+)?$");
         private readonly static Regex regexIsNumber = new Regex(@"^\d*$");
-        public DataTable? DataTable
+        public System.Data.DataTable? DataTable
         {
-            get 
+            get
             {
-                DataTable result = new DataTable();
-                Dictionary<string,int> columnNumbers = new Dictionary<string,int>();
+                System.Data.DataTable result = new System.Data.DataTable();
+                Dictionary<string, int> columnNumbers = new Dictionary<string, int>();
 
-                int rowCount = this.RowCount,columnCount = this.ColumnCount;
-                for(int column = 1; column <= columnCount; column++)
+                int rowCount = RowCount, columnCount = ColumnCount;
+                for (int column = 1; column <= columnCount; column++)
                 {
-                    ICell cell = this[1,column];
-                    if(cell.Value == null) { continue; }
+                    ICell cell = this[1, column];
+                    if (cell.Value == null) { continue; }
                     string? columnName = cell.Value.ToString();
                     if (string.IsNullOrEmpty(columnName)) { continue; }
-                    columnName = columnName.Replace(@" ",@"");
+                    columnName = columnName.Replace(@" ", @"");
                     if (regexIsNumber.IsMatch(columnName)) { continue; }
                     uint number = 0;
                     while (columnNumbers.ContainsKey(columnName))
@@ -88,20 +90,24 @@ namespace KalevaAalto.Interfaces.Excel
                 if (columnNumbers.Count <= 0) { return null; }
 
 
-                foreach(string columnName in columnNumbers.Keys)
+                foreach (string columnName in columnNumbers.Keys)
                 {
-                    result.Columns.Add(columnName,typeof(object));
+                    result.Columns.Add(columnName, typeof(object));
                 }
 
-                for(int row = 2; row <= rowCount; row++)
+                for (int row = 2; row <= rowCount; row++)
                 {
                     DataRow dataRow = result.Rows.Add();
-                    foreach (KeyValuePair<string,int> item in columnNumbers)
+                    foreach (KeyValuePair<string, int> item in columnNumbers)
                     {
                         ICell cell = this[row, item.Value];
                         if (cell.Value == null)
                         {
                             dataRow[item.Key] = DBNull.Value;
+                        }
+                        else if (cell.IsError)
+                        {
+                            dataRow[item.Key] = cell.ErrorType;
                         }
                         else
                         {
@@ -109,7 +115,7 @@ namespace KalevaAalto.Interfaces.Excel
                         }
                     }
                 }
-                
+
                 return result;
             }
         }

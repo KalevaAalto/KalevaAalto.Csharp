@@ -1,5 +1,4 @@
-﻿using KalevaAalto.Interfaces.Excel;
-using Microsoft.ML;
+﻿using Microsoft.ML;
 using OfficeOpenXml.Style;
 using System;
 using System.Collections.Generic;
@@ -8,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using KalevaAalto.Models.Excel.Enums;
+using KalevaAalto.Models.Excel;
 
 namespace KalevaAalto.Extensions.Excel.Epplus
 {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace KalevaAalto.Interfaces.Excel
+namespace KalevaAalto.Models.Excel
 {
     public abstract class IColumn
     {

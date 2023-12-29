@@ -1,5 +1,4 @@
-﻿using KalevaAalto.Interfaces.Excel;
-using KalevaAalto.Models.Excel;
+﻿using KalevaAalto.Models.Excel;
 using OfficeOpenXml;
 using System;
 using System.Collections.Generic;

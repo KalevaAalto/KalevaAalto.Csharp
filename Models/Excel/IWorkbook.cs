@@ -7,25 +7,25 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Data;
 using OfficeOpenXml;
-using KalevaAalto.Interfaces.Excel;
 using System.Reflection;
 using KalevaAalto.Models.Excel.Enums;
+using KalevaAalto;
 
-namespace KalevaAalto.Interfaces.Excel
+namespace KalevaAalto.Models.Excel
 {
-    public abstract class IWorkbook :IDisposable
+    public abstract class IWorkbook : IDisposable
     {
-        
+
         public string FileName { get; set; }
         public IWorkbook(string fileName)
         {
-            this.FileName = fileName;
-            this.Init();
+            FileName = fileName;
+            Init();
         }
         protected abstract void Init();
-        public bool FileExist { get => File.Exists(this.FileName); }
+        public bool FileExist { get => File.Exists(FileName); }
         public abstract IWorksheet[] Worksheets { get; }
-        public IWorksheet this[string Name] { get => this.Worksheets.First(it => it.Name == Name); }
+        public IWorksheet this[string Name] { get => Worksheets.First(it => it.Name == Name); }
 
 
         public abstract IWorksheet AddWorksheet(string name);
@@ -33,14 +33,14 @@ namespace KalevaAalto.Interfaces.Excel
         {
             if (Worksheets.Length == 0)
             {
-                this.AddWorksheet(@"Sheet1");
+                AddWorksheet(@"Sheet1");
             }
-            this._Save();
+            _Save();
         }
         public string Description { get; set; } = string.Empty;
         protected abstract void _Save();
-        
-        public IWorksheet AddWorksheet(DataTable dataTable, DataColumnStyle[]? dataColumnStyles = null)
+
+        public IWorksheet AddWorksheet(System.Data.DataTable dataTable, DataColumnStyle[]? dataColumnStyles = null)
         {
             if (string.IsNullOrEmpty(dataTable.TableName))
             {
@@ -67,7 +67,7 @@ namespace KalevaAalto.Interfaces.Excel
 
             Dictionary<string, DataColumnStyle> dataColumnStyleDic = dataTable.GetDataColumnStyles(dataColumnStyles).ToDictionary();
             //录入字段名称
-            for(int j = 0; j < columnCount; j++)
+            for (int j = 0; j < columnCount; j++)
             {
                 cell = worksheet[titleRow, serCol + j];
                 rng = worksheet[titleRow + 1, serCol + j, titleRow + rowCount, serCol + j];
@@ -85,13 +85,13 @@ namespace KalevaAalto.Interfaces.Excel
             }
 
             //录入数据
-            for(int i = 0; i < rowCount; i++)
+            for (int i = 0; i < rowCount; i++)
             {
                 DataRow dataRow = dataTable.Rows[i];
-                for(int j = 0; j < columnCount; j++)
+                for (int j = 0; j < columnCount; j++)
                 {
                     object? value = dataRow[j];
-                    if(value != null && value != DBNull.Value)
+                    if (value != null && value != DBNull.Value)
                     {
                         cell = worksheet[startRow + i, serCol + j];
                         cell.Value = value;
@@ -112,7 +112,7 @@ namespace KalevaAalto.Interfaces.Excel
             return worksheet;
         }
 
-        public IWorksheet AddWorksheet<T>(T[] objs,string tableName, DataColumnStyle[]? dataColumnStyles = null)
+        public IWorksheet AddWorksheet<T>(T[] objs, string tableName, DataColumnStyle[]? dataColumnStyles = null)
         {
             if (string.IsNullOrEmpty(tableName))
             {
@@ -124,7 +124,7 @@ namespace KalevaAalto.Interfaces.Excel
             {
                 throw new Exception(@"表格中没有字段！");
             }
-            IWorksheet worksheet = this.AddWorksheet(tableName);
+            IWorksheet worksheet = AddWorksheet(tableName);
             int titleRow = 1, startRow = titleRow + 1, serCol = 1;
             ICell cell;
             IRange rng;
@@ -144,7 +144,7 @@ namespace KalevaAalto.Interfaces.Excel
             {
                 cell = worksheet[titleRow, serCol + j];
                 rng = worksheet[titleRow + 1, serCol + j, titleRow + rowCount, serCol + j];
-                ClassColumnInfo classColumnInfo= classColumnInfos[j];
+                ClassColumnInfo classColumnInfo = classColumnInfos[j];
                 DataColumnStyle dataColumnStyle = dataColumnStyleDic[classColumnInfo.ColumnName];
 
                 cell.Value = classColumnInfo.ColumnName;
@@ -199,13 +199,13 @@ namespace KalevaAalto
     {
         public static IWorksheet ToExcelWorksheet(this DataTable dataTable, IWorkbook workbook, DataColumnStyle[]? excelDataColumns = null)
         {
-            return workbook.AddWorksheet(dataTable,excelDataColumns);
+            return workbook.AddWorksheet(dataTable, excelDataColumns);
         }
 
 
         public static IWorksheet ToExcelWorksheet<T>(this T[] values, IWorkbook workbook, string tableName = emptyString, DataColumnStyle[]? excelDataColumns = null)
         {
-            return workbook.AddWorksheet(values,tableName,excelDataColumns);
+            return workbook.AddWorksheet(values, tableName, excelDataColumns);
         }
 
     }
