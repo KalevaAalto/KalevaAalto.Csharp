@@ -73,7 +73,7 @@ namespace KalevaAalto.Models.FileSystem
             {
                 this.Sign = '/';
             }
-
+            
 
             this.Path = match.Groups[@"path"].Value;
             this.Name = match.Groups[@"name"].Value;
@@ -115,6 +115,11 @@ namespace KalevaAalto.Models.FileSystem
         }
 
         /// <summary>
+        /// 文件大小
+        /// </summary>
+        public long Size => this.FileInfo.Length;
+
+        /// <summary>
         /// 返回此文件名对象的文件名（有后缀名）
         /// </summary>
         public string PartialFileName
@@ -134,13 +139,9 @@ namespace KalevaAalto.Models.FileSystem
         }
 
 
-        public FileInfo FileInfo
-        {
-            get
-            {
-                return new FileInfo(this.FileName);
-            }
-        }
+        public FileInfo FileInfo => new FileInfo(this.FileName);
+
+
 
     }
 }

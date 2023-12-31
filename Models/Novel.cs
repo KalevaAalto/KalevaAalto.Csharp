@@ -16,429 +16,22 @@ using K4os.Compression.LZ4.Streams.Abstractions;
 using Org.BouncyCastle.Bcpg;
 using System.Data.SqlTypes;
 using KalevaAalto;
+using SqlSugar.DbConvert;
+using Google.Protobuf.WellKnownTypes;
 
 namespace KalevaAalto.Models
 {
 
-    public class Title
-    {
-        public string Name;
-        public int pos;
-        public Title(string name, int pos)
-        {
-            Name = name;
-            this.pos = pos;
-        }
-    }
 
     /// <summary>
     /// 小说章节类
     /// </summary>
-    public class NovelChapter
+    public class NovelChapter : IDisposable
     {
-        /// <summary>
-        /// 小说章节名称
-        /// </summary>
-        public string name { get; set; }
 
-        /// <summary>
-        /// 小说章节内容，分段落
-        /// </summary>
-        public List<string> paragraphs { get; private set; } = new List<string>();
+        private readonly static Regex s_defaultRegex = new Regex(@".*", RegexOptions.Compiled);
 
-        private readonly static Regex defaultRegex = new Regex(@"\S[\S ]*", RegexOptions.Compiled);
-
-        /// <summary>
-        /// 根据小说章节内容来分段落
-        /// </summary>
-        /// <param name="content">小说章节内容</param>
-        /// <returns></returns>
-        public static string[] Split(string content)
-        {
-            return defaultRegex.Matches(content).Select(match => match.Value).ToArray();
-        }
-
-
-        /// <summary>
-        /// 根据小说章节名和内容来创建小说章节对象
-        /// </summary>
-        /// <param name="name">小说章节名</param>
-        /// <param name="content">小说章节内容</param>
-        public NovelChapter(string name, string content = emptyString)
-        {
-            this.name = name;
-            Append(content);
-        }
-
-        /// <summary>
-        /// 根据小说章节名和内容来创建小说章节对象
-        /// </summary>
-        /// <param name="name">小说章节名</param>
-        /// <param name="contents">小说章节内容</param>
-        public NovelChapter(string name, string[] contents)
-        {
-            this.name = name;
-            Append(contents);
-        }
-
-
-        /// <summary>
-        /// 给小说章节添加段落
-        /// </summary>
-        /// <param name="content">要添加的内容</param>
-        public void Append(string content)
-        {
-            paragraphs.AddRange(Split(content));
-        }
-
-        /// <summary>
-        /// 给小说章节添加段落
-        /// </summary>
-        /// <param name="contents">要添加的内容</param>
-        public void Append(string[] contents)
-        {
-            foreach (string content in contents)
-            {
-                paragraphs.AddRange(Split(content));
-            }
-        }
-
-
-        /// <summary>
-        /// 清空小说章节的所有段落
-        /// </summary>
-        public void Clear()
-        {
-            paragraphs.Clear();
-        }
-
-
-        /// <summary>
-        /// 将小说章节转换为字符串
-        /// </summary>
-        /// <param name="lineBreak">段落区分字符串，默认为换行符加空隔符</param>
-        /// <returns>返回小说章节的字符串形式</returns>
-        public string ToString(string lineBreak = "\n    ")
-        {
-            StringBuilder rs = new StringBuilder(name);
-
-
-            //添加内容
-            foreach (string line in paragraphs)
-            {
-                rs.Append(lineBreak);
-                rs.Append(line);
-            }
-
-
-            return rs.ToString();
-        }
-
-
-        /// <summary>
-        /// 小说章节的长度
-        /// </summary>
-        public int Length
-        {
-            get
-            {
-                int result = 0;
-                foreach (string content in paragraphs)
-                {
-                    result += content.Length;
-                }
-                return result;
-            }
-        }
-
-
-        public XmlDocument htmlDocument
-        {
-            get
-            {
-                XmlDocument text_xml = new XmlDocument();
-                text_xml.AppendChild(text_xml.CreateXmlDeclaration(@"1.0", @"utf-8", null));
-                XmlElement html = text_xml.CreateElement(@"html");
-                text_xml.AppendChild(html);
-                {
-                    //添加标题
-                    XmlElement head = text_xml.CreateElement(@"head");
-                    html.AppendChild(head);
-                    {
-                        XmlElement title = text_xml.CreateElement(@"title");
-                        head.AppendChild(title);
-                        title.InnerText = name;
-                    }
-
-                    //添加章节内容
-                    XmlElement body = text_xml.CreateElement(@"body");
-                    html.AppendChild(body);
-                    {
-                        XmlElement h2 = text_xml.CreateElement(@"h2");
-                        body.AppendChild(h2);
-                        h2.InnerText = name;
-
-                        foreach (string line in paragraphs)
-                        {
-                            XmlElement p = text_xml.CreateElement(@"p");
-                            body.AppendChild(p);
-                            p.InnerText = line;
-                        }
-
-                    }
-                }
-                return text_xml;
-            }
-        }
-
-    }
-
-
-    public class Novel
-    {
-        /// <summary>
-        /// 小说文本格式类
-        /// </summary>
-        public enum NovelFileFormat
-        {
-            txt, epub, xml
-        }
-
-        public readonly static Dictionary<NovelFileFormat, string> novelFileFormatStrings = new Dictionary<NovelFileFormat, string> {
-            { NovelFileFormat.txt , @"txt"},
-            { NovelFileFormat.epub , @"epub"},
-            { NovelFileFormat.xml , @"xml"},
-        };
-
-        public readonly static Dictionary<string, NovelFileFormat> novelFileFormats = new Dictionary<string, NovelFileFormat> {
-            {@"txt",NovelFileFormat.txt},
-            {@"epub",NovelFileFormat.epub},
-            {@"xml",NovelFileFormat.xml},
-        };
-
-
-
-        /// <summary>
-        /// 小说名称
-        /// </summary>
-        public string name { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 小说序章
-        /// </summary>
-        public List<string> prologue { get; private set; } = new List<string>();
-
-        /// <summary>
-        /// 小说序章的小说章节对象
-        /// </summary>
-        public NovelChapter prologueChapter
-        {
-            get
-            {
-                return new NovelChapter(@"序章", prologue.ToArray());
-            }
-        }
-
-        public List<NovelChapter> chapters { get; private set; } = new List<NovelChapter>();
-
-
-
-        /// <summary>
-        /// 根据小说名称来创建小说对象
-        /// </summary>
-        /// <param name="name">小说名称</param>
-        public Novel(string name)
-        {
-            this.name = name;
-        }
-
-        //获取小说内容
-        public Novel(string novelName, string content, string pattern)
-        {
-            name = novelName;
-            string[] contentLines = NovelChapter.Split(content);
-            Regex regex = new Regex("^" + pattern + "$");
-
-            int pos = 0;
-
-
-            //获取小说序章
-            for (; pos < contentLines.Length && !regex.IsMatch(contentLines[pos]); pos++)
-            {
-                prologue.Add(contentLines[pos]);
-            }
-
-
-            //获取小说章节
-            for (; pos < contentLines.Length; pos++)
-            {
-                if (regex.IsMatch(contentLines[pos]))
-                {
-                    chapters.Add(new NovelChapter(contentLines[pos]));
-                }
-                else
-                {
-                    chapters.Last().Append(contentLines[pos]);
-                }
-                pos++;
-            }
-
-        }
-
-
-        /// <param name="lineBreak">段落区分字符串</param>
-        /// <returns>返回小说序章的字符串形式</returns>
-        public string PrologueString(string lineBreak = "\n    ")
-        {
-            StringBuilder result = new StringBuilder();
-            //添加序章
-            foreach (string line in prologue)
-            {
-                result.Append(lineBreak);
-                result.Append(line);
-            }
-
-            return result.ToString();
-        }
-
-        /// <param name="lineBreak">段落区分字符串</param>
-        /// <returns>返回小说的字符串形式</returns>
-        public string ToString(string lineBreak = "\n")
-        {
-            StringBuilder result = new StringBuilder(lineBreak + lineBreak);
-
-            //添加序章
-            result.Append(PrologueString());
-
-            result.Append(lineBreak + lineBreak);
-
-            foreach (NovelChapter chapter in chapters)
-            {
-                result.Append(chapter.ToString(lineBreak));
-                result.Append(lineBreak + lineBreak);
-            }
-
-
-            return result.ToString();
-        }
-
-        /// <summary>
-        /// 小说序章的字数长度
-        /// </summary>
-        public int prologueLength
-        {
-            get
-            {
-                int result = 0;
-                foreach (string line in prologue)
-                {
-                    result += line.Length;
-                }
-                return result;
-            }
-        }
-
-        /// <summary>
-        /// 小说的字数长度
-        /// </summary>
-        public int Length
-        {
-            get
-            {
-                int result = prologueLength;
-                foreach (NovelChapter chapter in chapters)
-                {
-                    result += chapter.name.Length;
-                    result += chapter.Length;
-                }
-                return result;
-            }
-
-        }
-
-
-        /// <param name="index">小说章节号</param>
-        /// <returns>返回小说章节号所对应的小说章节</returns>
-        public NovelChapter this[int index]
-        {
-            get
-            {
-                if (index <= chapters.Count && index > 0)
-                {
-                    return chapters[index - 1];
-                }
-                else
-                {
-                    return new NovelChapter("序章", prologue.ToArray());
-                }
-            }
-
-        }
-
-        /// <param name="index">小说章节名</param>
-        /// <returns>返回小说章节名所对应的小说章节</returns>
-        public NovelChapter this[string name]
-        {
-            get
-            {
-                foreach (NovelChapter chapter in chapters)
-                {
-                    if (chapter.name == name)
-                    {
-                        return chapter;
-                    }
-                }
-                return new NovelChapter("序章", prologue.ToArray());
-            }
-
-        }
-
-
-        /// <summary>
-        /// 删除章节
-        /// </summary>
-        /// <param name="name">要删除的章节名</param>
-        public void deleteChapter(string name)
-        {
-            if (name == @"序章")
-            {
-                prologue.Clear();
-                return;
-            }
-            foreach (NovelChapter chapter in chapters)
-            {
-                if (chapter.name == name)
-                {
-                    chapters.Remove(chapter); break;
-                }
-            }
-        }
-
-        /// <summary>
-        /// 删除章节
-        /// </summary>
-        /// <param name="name">要删除的章节序号</param>
-        public void deleteChapter(int index)
-        {
-            if (index <= chapters.Count && index > 0)
-            {
-                chapters.Remove(chapters[index - 1]);
-            }
-            else if (index == 0)
-            {
-                prologue.Clear();
-            }
-        }
-
-
-
-
-
-
-        /// <summary>
-        /// container.xml标准文档
-        /// </summary>
-        private static XmlDocument container_xml_xml
+        private static XmlDocument containerXmlXml
         {
             get
             {
@@ -465,66 +58,214 @@ namespace KalevaAalto.Models
             }
         }
 
-        public byte[] txt
+
+
+        public const string DefaultLineBreak = @"\n    ";
+        public static string[] Split(string content)
+        {
+            return s_defaultRegex.Matches(content).Select(match => match.Value.Trim()).Where(it=>it.Length > 0).ToArray();
+        }
+
+
+
+
+
+
+
+
+        string _lineBreak = DefaultLineBreak;
+        string _title;
+        List<string> _paragraphs = new List<string>();
+        public NovelChapter(string title, string content = emptyString)
+        {
+            this._title = title;
+            this.Content = content;
+        }
+
+
+
+        public string LineBreak { get=>this._lineBreak; set=>this._lineBreak=value; }
+        public string Title { get=>this._title; set=>this._title=value; }
+        public int Length =>this.Title.Length + this._paragraphs.Sum(it => it.Length);
+        public string Content
         {
             get
             {
-                string text = ToString();
-                // 将字符串转换为字节数组
-                return text.ToByte();
+                StringBuilder rs = new StringBuilder();
+                foreach (string line in this._paragraphs)
+                {
+                    rs.Append(this.LineBreak);
+                    rs.Append(line);
+                }
+                return rs.ToString();
             }
+            set => this.Append(value);
         }
-
-        /// <summary>
-        /// 将小说对象保存为txt文档
-        /// </summary>
-        /// <param name="path">要保存的文件夹路径</param>
-        /// <returns>返回程序是否运行</returns>
-        public bool SaveAsTxt(string path)
+        public XmlDocument HtmlDocument
         {
-            ToString().SaveToFile(new Models.FileSystem.FileNameInfo(path, name, @"txt"));
-            return true;
-        }
-
-        /// <summary>
-        /// 从XML文档中获取小说
-        /// </summary>
-        /// <param name="fileName">要读取的文件名称</param>
-        /// <param name="pattern">判断标题的正则表达式</param>
-        public static Novel LoadNovelFromTxt(string fileName, string pattern = @"第\d+章\-.*")
-        {
-            Models.FileSystem.FileNameInfo fileNameInfo = new Models.FileSystem.FileNameInfo(fileName);
-            return new Novel(fileNameInfo.Name, GetStringFromFile(fileName), pattern);
-        }
-
-
-        /// <summary>
-        /// 从XML文档中获取小说
-        /// </summary>
-        /// <param name="fileName">要读取的文件名称</param>
-        /// <param name="pattern">判断标题的正则表达式</param>
-        public static Novel LoadNovelFromTxt(string novelName, byte[] bytes, string pattern = @"第\d+章\-.*")
-        {
-            using (MemoryStream memoryStream = new MemoryStream(bytes))
+            get
             {
-                Encoding encoding = memoryStream.GetEncoding();
-                string content = encoding.GetString(memoryStream.ToArray());
-                return new Novel(novelName, content, pattern);
+                XmlDocument text_xml = new XmlDocument();
+                text_xml.AppendChild(text_xml.CreateXmlDeclaration(@"1.0", @"utf-8", null));
+                XmlElement html = text_xml.CreateElement(@"html");
+                text_xml.AppendChild(html);
+                {
+                    //添加标题
+                    XmlElement head = text_xml.CreateElement(@"head");
+                    html.AppendChild(head);
+                    {
+                        XmlElement title = text_xml.CreateElement(@"title");
+                        head.AppendChild(title);
+                        title.InnerText = this.Title;
+                    }
+
+                    //添加章节内容
+                    XmlElement body = text_xml.CreateElement(@"body");
+                    html.AppendChild(body);
+                    {
+                        XmlElement h2 = text_xml.CreateElement(@"h2");
+                        body.AppendChild(h2);
+                        h2.InnerText = this.Title;
+
+                        foreach (string line in this._paragraphs)
+                        {
+                            XmlElement p = text_xml.CreateElement(@"p");
+                            body.AppendChild(p);
+                            p.InnerText = line;
+                        }
+
+                    }
+                }
+                return text_xml;
             }
         }
 
-        /// <summary>
-        /// 将小说对象保存为xml文档
-        /// </summary>
-        /// <param name="path">要保存的文件夹路径</param>
-        /// <returns>返回程序是否运行</returns>
-        public bool SaveAsXml(string path)
+    
+
+
+        public void Append(string content)
         {
-            xml.Save(new Models.FileSystem.FileNameInfo(path, name, @"xml").FileName);
-            return true;
+            this._paragraphs.AddRange(Split(content));
         }
 
-        public XmlDocument xml
+        public void Clear()
+        {
+            this._paragraphs.Clear();
+        }
+
+        public override string ToString()
+        {
+            return this.Title + this.Content;
+        }
+        public override bool Equals(object? obj)
+        {
+            NovelChapter? other = obj as NovelChapter;
+            if (other == null) { return false; }
+            return string.Equals(this.LineBreak, other.LineBreak) && string.Equals(this.Title, other.Title) && string.Equals(this.Content,other.Content);
+        }
+        public override int GetHashCode()
+        {
+            int hash = 17;
+            hash = hash * 23 + string.GetHashCode(this.LineBreak);
+            hash = hash * 23 + string.GetHashCode(this.Title);
+            hash = hash * 23 + string.GetHashCode(this.Content);
+            return hash;
+        }
+
+        public void Dispose()
+        {
+            this._paragraphs.Clear();
+        }
+    }
+
+
+    public class Novel : IDisposable
+    {
+
+        public const string DefaultTitleRegexString = @"第[〇零一两二三四五六七八九十百千万亿\d]+[卷章回节集][\-\:\s]*(?<name>.*)";
+
+        
+
+
+
+        private string _lineBreak = NovelChapter.DefaultLineBreak;
+        private string _title;
+        private List<string> _prologue = new List<string>();
+        private List<NovelChapter> _chapters = new List<NovelChapter>();
+        public Novel(string title, string content = emptyString, string pattern = DefaultTitleRegexString)
+        {
+            this._title = title;
+            this.SetContent(content,pattern);
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+       
+
+        public string LineBreak 
+        {
+            get=>this._lineBreak;
+            set
+            {
+                this._lineBreak = value;
+                foreach(NovelChapter novelChapter in this._chapters) { novelChapter.LineBreak = value; }
+            }
+        }
+        public string Title { get=>this._title; set=>this._title=value; }
+        public string Prologue
+        {
+            get
+            {
+                StringBuilder result = new StringBuilder();
+                this._prologue.ForEach(line => { result.Append(this.LineBreak); result.Append(line); });
+                return result.ToString();
+            }
+            set
+            {
+                this._prologue.Clear();
+                this._prologue.AddRange(NovelChapter.Split(value));
+            }
+        }
+        public int PrologueLength => this._prologue.Sum(it => it.Length);
+        public string Content
+        {
+            get
+            {
+                StringBuilder result = new StringBuilder(this.LineBreak + this.LineBreak);
+                result.Append(this.Prologue);
+                this._chapters.ForEach(novelChapter => {
+                    result.Append(this.LineBreak + this.LineBreak);
+                    result.Append(novelChapter.Content);
+                });
+                return result.ToString();
+            }
+            set
+            {
+                this.SetContent(value);
+            }
+        }
+        public int Length=>this.Title.Length + this.PrologueLength + this._chapters.Sum(it => it.Length);
+        public NovelChapter[] Chapters =>this._chapters.ToArray();
+        public List<NovelChapter> ChapterList => this._chapters;
+
+
+        public XmlDocument Xml
         {
             get
             {
@@ -536,13 +277,13 @@ namespace KalevaAalto.Models
                 #region 添加名称
                 XmlElement title = xml.CreateElement(@"title");
                 novel.AppendChild(title);
-                title.InnerText = name;
+                title.InnerText = this.Title;
                 #endregion
 
                 #region 添加序章
                 XmlElement prologue = xml.CreateElement(@"prologue");
                 novel.AppendChild(prologue);
-                foreach (string str in this.prologue)
+                foreach (string str in this._prologue)
                 {
                     XmlElement p = xml.CreateElement(@"p");
                     prologue.AppendChild(p);
@@ -554,19 +295,19 @@ namespace KalevaAalto.Models
                 #region 添加章节
                 XmlElement chapters = xml.CreateElement(@"chapters");
                 novel.AppendChild(chapters);
-                foreach (NovelChapter chapter in this.chapters)
+                foreach (NovelChapter chapter in this._chapters)
                 {
                     XmlElement xml_chapter = xml.CreateElement(@"chapter");
                     chapters.AppendChild(xml_chapter);
 
                     XmlElement chapter_title = xml.CreateElement(@"title");
                     xml_chapter.AppendChild(chapter_title);
-                    chapter_title.InnerText = chapter.name;
+                    chapter_title.InnerText = chapter.Title;
 
                     XmlElement chapter_content = xml.CreateElement(@"content");
                     xml_chapter.AppendChild(chapter_content);
 
-                    foreach (string str in chapter.paragraphs)
+                    foreach (string str in NovelChapter.Split(chapter.Content))
                     {
                         XmlElement p = xml.CreateElement(@"p");
                         chapter_content.AppendChild(p);
@@ -581,13 +322,116 @@ namespace KalevaAalto.Models
         }
 
 
-        /// <summary>
-        /// 从XML文档中获取小说
-        /// </summary>
-        /// <param name="xml">小说的XML文档</param>
-        public static Novel LoadNovelFromXml(XmlDocument xml, string novelName = emptyString)
+
+
+
+
+
+        public void PrologueAppend(string content)
         {
-            Novel result = new Novel(novelName);
+            this._prologue.AddRange(NovelChapter.Split(content));
+        }
+        public void SetContent(string content, string pattern = DefaultTitleRegexString)
+        {
+            this._prologue.Clear();
+            this._chapters.ForEach(chapter => { chapter.Dispose(); });
+            this._chapters.Clear();
+
+
+            Regex titleRegex = new Regex($"^{pattern}$");
+            int pos = 0;
+            string[] contentLines = NovelChapter.Split(content);
+
+
+            //获取小说序章
+            for (; pos < contentLines.Length && !titleRegex.IsMatch(contentLines[pos]); pos++)
+            {
+                this._prologue.Add(contentLines[pos]);
+            }
+
+
+            //获取小说章节
+            for (; pos < contentLines.Length; pos++)
+            {
+                if (titleRegex.IsMatch(contentLines[pos]))
+                {
+                    this._chapters.Add(new NovelChapter(contentLines[pos]) { LineBreak = this.LineBreak });
+                }
+                else
+                {
+                    this._chapters.Last().Append(contentLines[pos]);
+                }
+            }
+        }
+
+
+        
+
+
+        public void AddChapter(NovelChapter novelChapter)
+        {
+            this._chapters.Add(novelChapter);
+        }
+        public void DeleteChapter(string title)
+        {
+            if (title == @"序章")
+            {
+                this._prologue.Clear();
+            }
+            else
+            {
+                this._chapters.ForEach(it =>
+                {
+                    if (it.Title == title) { this._chapters.Remove(it); return; }
+                });
+            }
+        }
+        public void DeleteChapter(int index)
+        {
+            if (index == 0)
+            {
+                this._prologue.Clear();
+            }
+            else if(index>0 && index<=this._chapters.Count)
+            {
+                this._chapters.RemoveAt(index-1);
+            }
+        }
+
+        public override string ToString() =>this.Title + this.Content;
+
+
+
+
+
+
+        public void SaveAsTxt(string fileName)
+        {
+            System.IO.File.WriteAllText(fileName, this.ToString());
+        }
+        public async Task SaveAsTxtAsync(string fileName)
+        {
+            await System.IO.File.WriteAllTextAsync(fileName, this.ToString());
+        }
+        public static Novel LoadNovelFromTxt(string fileName, string pattern = DefaultTitleRegexString)
+        {
+            return new Novel(System.IO.Path.GetFileNameWithoutExtension(fileName), GetStringFromFile(fileName), pattern);
+        }
+        public static async  Task<Novel> LoadNovelFromTxtAsync(string fileName, string pattern = DefaultTitleRegexString)
+        {
+            return new Novel(System.IO.Path.GetFileNameWithoutExtension(fileName), await GetStringFromFileAsync(fileName), pattern);
+        }
+
+
+
+
+        public void SaveAsXml(string fileName)
+        {
+            this.Xml.Save(fileName);
+        }
+        public static Novel LoadNovelFromXml(XmlDocument xml)
+        {
+
 
             if (xml.DocumentElement is null)
             {
@@ -595,18 +439,12 @@ namespace KalevaAalto.Models
             }
 
             #region 录入标题
-            if (string.IsNullOrEmpty(result.name))
+            var title = xml.DocumentElement.SelectSingleNode(@"title");
+            if (title == null)
             {
-                var title = xml.DocumentElement.SelectSingleNode("title");
-                if (title is null)
-                {
-                    throw new Exception(@"此XML中找不到小说标题！！！");
-                }
-                else
-                {
-                    result.name = title.InnerText;
-                }
+                throw new Exception(@"此XML中找不到小说标题！！！");
             }
+            Novel result = new Novel(title.InnerText);
             #endregion
 
 
@@ -614,42 +452,39 @@ namespace KalevaAalto.Models
 
 
             #region 录入序章
-            var prologue = xml.DocumentElement.SelectSingleNode("prologue");
-            if (prologue is null)
+            var prologue = xml.DocumentElement.SelectSingleNode(@"prologue");
+            if (prologue == null)
             {
                 throw new Exception(@"此XML中找不到小说序章！！！");
             }
-            foreach (XmlNode p in prologue.ChildNodes)
-            {
-                result.prologue.Add(p.InnerText);
-            }
+            result.Prologue = @"\n".Join(prologue.ChildNodes.Cast<XmlNode>().Select(it => it.InnerText).ToArray());
             #endregion
 
 
             #region 录入章节
-            var chapters = xml.DocumentElement.SelectSingleNode("chapters");
+            var chapters = xml.DocumentElement.SelectSingleNode(@"chapters");
             if (chapters is null)
             {
                 throw new Exception(@"此XML中找不到小说章节！！！");
             }
             foreach (XmlNode chapter_node in chapters.ChildNodes)
             {
-                var chapter_name = chapter_node.SelectSingleNode("title");
-                if (chapter_name is null)
+                var chapter_name = chapter_node.SelectSingleNode(@"title");
+                if (chapter_name == null)
                 {
                     throw new Exception(@"此XML中小说章节格式有误！！！");
                 }
                 NovelChapter chapter = new NovelChapter(chapter_name.InnerText);
-                result.chapters.Add(chapter);
+                result.AddChapter(chapter);
 
                 var content = chapter_node.SelectSingleNode("content");
-                if (content is null)
+                if (content == null)
                 {
-                    throw new Exception($"此XML中小说“{chapter.name}”章节格式有误！！！");
+                    throw new Exception($"此XML中小说“{chapter.Title}”章节格式有误！！！");
                 }
                 foreach (XmlNode p in content.ChildNodes)
                 {
-                    chapter.paragraphs.Add(p.InnerText);
+                    chapter.Append(p.InnerText);
                 }
             }
             #endregion
@@ -659,38 +494,75 @@ namespace KalevaAalto.Models
 
 
         }
-
-
-        /// <summary>
-        /// 从XML文档中获取小说
-        /// </summary>
-        /// <param name="bytes">小说的XML文档的二进制形式</param>
-        public static Novel LoadNovelFromXml(byte[] bytes, string novelName = emptyString)
-        {
-            using (MemoryStream memoryStream = new MemoryStream(bytes))
-            {
-                // 使用 XmlDocument 加载 Memory Stream 中的数据
-                XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.Load(memoryStream);
-
-                return LoadNovelFromXml(xmlDoc, novelName);
-            }
-        }
-
-
-        /// <summary>
-        /// 从XML文档中获取小说
-        /// </summary>
-        /// <param name="xml">小说的XML文档</param>
         public static Novel LoadNovelFromXml(string fileName)
         {
             XmlDocument xml = new XmlDocument();
             xml.Load(fileName);
-            return LoadNovelFromXml(xml, new Models.FileSystem.FileNameInfo(fileName).Name);
+            return LoadNovelFromXml(xml);
         }
 
 
 
+        private static XmlDocument s_containerXmlXml
+        {
+            get
+            {
+
+                {
+                    XDocument xml = new XDocument(
+                        new XDeclaration("1.0", "utf-8", null),
+                        new XElement(@"container",
+                            new XAttribute(@"version",@"1.0"),
+                            new XElement(@"rootfiles",
+                                new XElement(@"rootfile")
+                                )
+                            )
+                    ) ;
+
+                }
+
+
+
+
+
+
+
+
+
+
+                {
+
+
+
+                    XmlDocument result = new XmlDocument();
+                    result.AppendChild(result.CreateXmlDeclaration(@"1.0", @"utf-8", null));
+                    {
+
+                        XmlElement container = result.CreateElement(@"container");
+                        result.AppendChild(container);
+                        container.SetAttribute(@"version", @"1.0");
+                        container.SetAttribute(@"xmlns", @"urn:oasis:names:tc:opendocument:xmlns:container");
+
+
+                        XmlElement rootfiles = result.CreateElement(@"rootfiles");
+                        container.AppendChild(rootfiles);
+
+                        XmlElement rootfile = result.CreateElement(@"rootfile");
+                        rootfiles.AppendChild(rootfile);
+                        rootfile.SetAttribute(@"full-path", @"OPS/content.opf");
+                        rootfile.SetAttribute(@"media-type", @"application/oebps-package+xml");
+
+                    }
+                    return result;
+
+
+                }
+
+
+
+
+            }
+        }
         public byte[] epub
         {
             get
@@ -745,7 +617,7 @@ namespace KalevaAalto.Models
 
                             XmlElement title = content_opf_xml.CreateElement(@"dc", @"title", @"http://purl.org/dc/elements/1.1/");
                             metadata.AppendChild(title);
-                            title.InnerText = name;
+                            title.InnerText = this.Title;
 
                             XmlElement meta = content_opf_xml.CreateElement(@"meta");
                             metadata.AppendChild(meta);
@@ -771,7 +643,7 @@ namespace KalevaAalto.Models
                             item.SetAttribute(@"id", @"ncx");
                             item.SetAttribute(@"media-type", @"application/x-dtbncx+xml");
 
-                            for (int i = 0; i <= chapters.Count; i++)
+                            for (int i = 0; i <= this._chapters.Count; i++)
                             {
                                 item = content_opf_xml.CreateElement(@"item");
                                 manifest.AppendChild(item);
@@ -787,7 +659,7 @@ namespace KalevaAalto.Models
                         package.AppendChild(spine);
                         spine.SetAttribute(@"toc", @"ncx");
                         {
-                            for (int i = 0; i <= chapters.Count; i++)
+                            for (int i = 0; i <= this._chapters.Count; i++)
                             {
                                 XmlElement itemref = content_opf_xml.CreateElement(@"itemref");
                                 spine.AppendChild(itemref);
@@ -842,7 +714,7 @@ namespace KalevaAalto.Models
                     {
                         XmlElement text = toc_ncx_xml.CreateElement(@"docTitle");
                         docTitle.AppendChild(text);
-                        text.InnerText = name;
+                        text.InnerText = this.Title;
                     }
 
 
@@ -873,9 +745,9 @@ namespace KalevaAalto.Models
                         };
 
                         navMap.AppendChild(lambda(0, @"序章"));
-                        for (int i = 1; i <= chapters.Count; i++)
+                        for (int i = 1; i <= this._chapters.Count; i++)
                         {
-                            navMap.AppendChild(lambda(i, chapters[i - 1].name));
+                            navMap.AppendChild(lambda(i, this._chapters[i - 1].Title));
                         }
 
 
@@ -888,10 +760,10 @@ namespace KalevaAalto.Models
 
 
                 List<XmlDocument> xmls = new List<XmlDocument>();
-                xmls.Add(prologueChapter.htmlDocument);
-                foreach (NovelChapter chapter in chapters)
+                xmls.Add(new NovelChapter(@"序章",this.Prologue).HtmlDocument);
+                foreach (NovelChapter chapter in this._chapters)
                 {
-                    xmls.Add(chapter.htmlDocument);
+                    xmls.Add(chapter.HtmlDocument);
                 }
 
 
@@ -923,7 +795,7 @@ namespace KalevaAalto.Models
                     #region 添加container.xml文档
                     var container_xml = zipFile.CreateEntry(@"META-INF/container.xml");
                     stream = container_xml.Open();
-                    container_xml_xml.Save(stream);
+                    s_containerXmlXml.Save(stream);
                     stream.Close();
                     #endregion
 
@@ -964,21 +836,14 @@ namespace KalevaAalto.Models
 
             }
         }
-
-        /// <summary>
-        /// 将小说对象保存为
-        /// </summary>
-        /// <param name="path">要保存到的文件夹</param>
-        /// <returns>返回epub是否正确加载，是的话返回true，否则返回false</returns>
-        public bool SaveAsEpub(string path)
+        public void SaveAsEpub(string fileName)
         {
+            File.WriteAllBytes(fileName, this.epub);
+        }
 
-            Models.FileSystem.FileNameInfo fileNameInfo = new Models.FileSystem.FileNameInfo(path, name, @"epub");
-            // 这里你可以将数据写入到 memoryStream 中，例如使用 memoryStream.Write 方法
-            // 将MemoryStream的内容写入文件
-            File.WriteAllBytes(fileNameInfo.FileName, epub);
-            return true;
-
+        public async Task SaveAsEpubAsync(string fileName)
+        {
+            await File.WriteAllBytesAsync(fileName, this.epub);
         }
 
         /// <summary>
@@ -1006,7 +871,7 @@ namespace KalevaAalto.Models
 
             try
             {
-                return LoadNovelFromEpub(ZipFile.OpenRead(fileNameInfo.FileName), fileNameInfo.Name);
+                return LoadNovelFromEpub(ZipFile.OpenRead(fileNameInfo.FileName));
             }
             catch (Exception ex)
             {
@@ -1015,15 +880,9 @@ namespace KalevaAalto.Models
 
 
         }
-
-        /// <summary>
-        /// 从epub文件中获取小说
-        /// </summary>
-        /// <param name="zipArchive">epub文件的zip文件流</param>
-        /// <param name="novelName">小说标题名称</param>
-        public static Novel LoadNovelFromEpub(ZipArchive zipArchive, string novelName = emptyString)
+        private static Novel LoadNovelFromEpub(ZipArchive zipArchive)
         {
-            Novel result = new Novel(novelName);
+            Novel result = new Novel(@"");
             XmlDocument xml = new XmlDocument();
             XmlNamespaceManager namespaceManager;
             #region 读取文件列表
@@ -1074,12 +933,12 @@ namespace KalevaAalto.Models
             namespaceManager.AddNamespace(@"dc", @"http://purl.org/dc/elements/1.1/");
 
             #region 查找小说标题
-            if (string.IsNullOrEmpty(result.name))
+            if (string.IsNullOrEmpty(result.Title))
             {
-                result.name = xml.SelectSingleNode(@"/ns:package/ns:metadata/dc:title", namespaceManager)?.InnerText ?? string.Empty;
-                if (string.IsNullOrEmpty(result.name))
+                result.Title = xml.SelectSingleNode(@"/ns:package/ns:metadata/dc:title", namespaceManager)?.InnerText ?? string.Empty;
+                if (string.IsNullOrEmpty(result.Title))
                 {
-                    result.name = @"空白文档";
+                    result.Title = @"空白文档";
                 }
             }
             #endregion
@@ -1157,16 +1016,16 @@ namespace KalevaAalto.Models
                 NovelChapter novelChapter = new NovelChapter(@"第0000章-");
 
                 #region 找到小说章节标题
-                if (titleNode is not null && !string.IsNullOrEmpty(titleNode.InnerText))
+                if (titleNode != null && !string.IsNullOrEmpty(titleNode.InnerText))
                 {
-                    novelChapter.name = titleNode.InnerText;
+                    novelChapter.Title = titleNode.InnerText;
                 }
 
                 #endregion
 
 
                 #region 获取小说内容
-                if (pNodes is not null)
+                if (pNodes != null)
                 {
                     foreach (XmlNode pNode in pNodes)
                     {
@@ -1178,13 +1037,13 @@ namespace KalevaAalto.Models
 
 
 
-                if (novelChapter.name == @"序章")
+                if (novelChapter.Title == @"序章")
                 {
-                    result.prologue = novelChapter.paragraphs;
+                    result.Prologue = novelChapter.Content;
                 }
                 else
                 {
-                    result.chapters.Add(novelChapter);
+                    result.AddChapter(novelChapter);
                 }
 
 
@@ -1206,8 +1065,17 @@ namespace KalevaAalto.Models
             using (MemoryStream memoryStream = new MemoryStream(bytes))
             using (ZipArchive zipArchive = new ZipArchive(memoryStream))
             {
-                return LoadNovelFromEpub(zipArchive, novelName);
+                return LoadNovelFromEpub(zipArchive);
             }
+        }
+
+
+
+        public void Dispose()
+        {
+            this._prologue.Clear();
+            this._chapters.ForEach(chapter => { chapter.Dispose(); });
+            this._chapters.Clear();
         }
 
     }
