@@ -288,10 +288,8 @@ namespace KalevaAalto.Models
             }
             else
             {
-                this._chapters.ForEach(it =>
-                {
-                    if (it.Title == title) { this._chapters.Remove(it); return; }
-                });
+                NovelChapter? novelChapter = _chapters.FirstOrDefault(ch => ch.Title == title);
+                if(novelChapter is not null) _chapters.Remove(novelChapter);
             }
         }
         public void DeleteChapter(int index)
