@@ -18,6 +18,8 @@ using System.Data.SqlTypes;
 using KalevaAalto;
 using SqlSugar.DbConvert;
 using Google.Protobuf.WellKnownTypes;
+using OfficeOpenXml.ConditionalFormatting.Contracts;
+using Microsoft.Extensions.FileSystemGlobbing.Internal;
 
 namespace KalevaAalto.Models
 {
@@ -31,36 +33,11 @@ namespace KalevaAalto.Models
 
         private readonly static Regex s_defaultRegex = new Regex(@".*", RegexOptions.Compiled);
 
-        private static XmlDocument containerXmlXml
-        {
-            get
-            {
-                XmlDocument result = new XmlDocument();
-                result.AppendChild(result.CreateXmlDeclaration(@"1.0", @"utf-8", null));
-                {
-
-                    XmlElement container = result.CreateElement(@"container");
-                    result.AppendChild(container);
-                    container.SetAttribute(@"version", @"1.0");
-                    container.SetAttribute(@"xmlns", @"urn:oasis:names:tc:opendocument:xmlns:container");
-
-
-                    XmlElement rootfiles = result.CreateElement(@"rootfiles");
-                    container.AppendChild(rootfiles);
-
-                    XmlElement rootfile = result.CreateElement(@"rootfile");
-                    rootfiles.AppendChild(rootfile);
-                    rootfile.SetAttribute(@"full-path", @"OPS/content.opf");
-                    rootfile.SetAttribute(@"media-type", @"application/oebps-package+xml");
-
-                }
-                return result;
-            }
-        }
 
 
 
-        public const string DefaultLineBreak = @"\n    ";
+        public const int DefaultBlankCharNumber = 4;
+        public const string DefaultLineBreak = "\n";
         public static string[] Split(string content)
         {
             return s_defaultRegex.Matches(content).Select(match => match.Value.Trim()).Where(it=>it.Length > 0).ToArray();
@@ -72,7 +49,7 @@ namespace KalevaAalto.Models
 
 
 
-
+        int _blankCharNumber = DefaultBlankCharNumber;
         string _lineBreak = DefaultLineBreak;
         string _title;
         List<string> _paragraphs = new List<string>();
@@ -82,63 +59,48 @@ namespace KalevaAalto.Models
             this.Content = content;
         }
 
-
-
+        //int _blankCharNumber = DefaultBlankCharNumber;
+        public int BlankCharNumber { get => this._blankCharNumber; set => this._blankCharNumber = System.Math.Max(0, value); }
+        public string BlankString => new string(' ', BlankCharNumber);
         public string LineBreak { get=>this._lineBreak; set=>this._lineBreak=value; }
         public string Title { get=>this._title; set=>this._title=value; }
-        public int Length =>this.Title.Length + this._paragraphs.Sum(it => it.Length);
+        public int Length =>this._paragraphs.Sum(it => it.Length);
         public string Content
         {
             get
             {
                 StringBuilder rs = new StringBuilder();
+                string blankString = BlankString;
                 foreach (string line in this._paragraphs)
                 {
-                    rs.Append(this.LineBreak);
+                    rs.Append(blankString);
                     rs.Append(line);
+                    rs.Append(LineBreak);
                 }
+                if (_paragraphs.Count > 0) rs.Remove(this._paragraphs.Count-LineBreak.Length,LineBreak.Length);
                 return rs.ToString();
             }
-            set => this.Append(value);
-        }
-        public XmlDocument HtmlDocument
-        {
-            get
+            set
             {
-                XmlDocument text_xml = new XmlDocument();
-                text_xml.AppendChild(text_xml.CreateXmlDeclaration(@"1.0", @"utf-8", null));
-                XmlElement html = text_xml.CreateElement(@"html");
-                text_xml.AppendChild(html);
-                {
-                    //添加标题
-                    XmlElement head = text_xml.CreateElement(@"head");
-                    html.AppendChild(head);
-                    {
-                        XmlElement title = text_xml.CreateElement(@"title");
-                        head.AppendChild(title);
-                        title.InnerText = this.Title;
-                    }
-
-                    //添加章节内容
-                    XmlElement body = text_xml.CreateElement(@"body");
-                    html.AppendChild(body);
-                    {
-                        XmlElement h2 = text_xml.CreateElement(@"h2");
-                        body.AppendChild(h2);
-                        h2.InnerText = this.Title;
-
-                        foreach (string line in this._paragraphs)
-                        {
-                            XmlElement p = text_xml.CreateElement(@"p");
-                            body.AppendChild(p);
-                            p.InnerText = line;
-                        }
-
-                    }
-                }
-                return text_xml;
+                this._paragraphs.Clear();
+                this.Append(value);
             }
         }
+
+        private static XDeclaration s_defaultDeclaration => new XDeclaration(@"1.0", @"utf-8", null);
+        public XDocument HtmlDocument=> new XDocument(s_defaultDeclaration,
+                    new XElement(@"html",
+                        new XElement(@"head",
+                            new XElement(@"title", this.Title)
+                            ),
+                        new XElement(@"body",
+                            new XElement(@"h2",this.Title),
+                            _paragraphs.Select(p=>new XElement(@"p",p))
+                            )
+                        )
+                    );
+            
+        
 
     
 
@@ -155,7 +117,7 @@ namespace KalevaAalto.Models
 
         public override string ToString()
         {
-            return this.Title + this.Content;
+            return Title + LineBreak + Content;
         }
         public override bool Equals(object? obj)
         {
@@ -181,43 +143,35 @@ namespace KalevaAalto.Models
 
     public class Novel : IDisposable
     {
-
+        private const string s_defaultNovelName = @"空白小说";
         public const string DefaultTitleRegexString = @"第[〇零一两二三四五六七八九十百千万亿\d]+[卷章回节集][\-\:\s]*(?<name>.*)";
 
-        
-
-
-
+        int _blankCharNumber = NovelChapter.DefaultBlankCharNumber;
         private string _lineBreak = NovelChapter.DefaultLineBreak;
         private string _title;
         private List<string> _prologue = new List<string>();
         private List<NovelChapter> _chapters = new List<NovelChapter>();
+        public Novel()
+        {
+            _title = s_defaultNovelName;
+        }
         public Novel(string title, string content = emptyString, string pattern = DefaultTitleRegexString)
         {
             this._title = title;
             this.SetContent(content,pattern);
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-       
-
+        
+        public int BlankCharNumber 
+        { 
+            get => this._blankCharNumber;
+            set
+            {
+                _blankCharNumber = System.Math.Max(0, value);
+                foreach (NovelChapter novelChapter in this._chapters) { novelChapter.BlankCharNumber = value; }
+            }
+        }
+        public string BlankString => new string(' ', BlankCharNumber);
         public string LineBreak 
         {
             get=>this._lineBreak;
@@ -233,7 +187,9 @@ namespace KalevaAalto.Models
             get
             {
                 StringBuilder result = new StringBuilder();
-                this._prologue.ForEach(line => { result.Append(this.LineBreak); result.Append(line); });
+                string blankString = BlankString;
+                this._prologue.ForEach(line => { result.Append(blankString); result.Append(line); result.Append(this.LineBreak); });
+                if (_prologue.Count > 0) result.Remove(result.Length - LineBreak.Length, LineBreak.Length);
                 return result.ToString();
             }
             set
@@ -242,84 +198,43 @@ namespace KalevaAalto.Models
                 this._prologue.AddRange(NovelChapter.Split(value));
             }
         }
-        public int PrologueLength => this._prologue.Sum(it => it.Length);
+        public int PrologueLength => this._prologue.Sum(it =>it.Length);
         public string Content
         {
             get
             {
-                StringBuilder result = new StringBuilder(this.LineBreak + this.LineBreak);
+                if (Length == 0) return string.Empty;
+
+                StringBuilder result = new StringBuilder();
                 result.Append(this.Prologue);
+                result.Append(LineBreak + LineBreak);
                 this._chapters.ForEach(novelChapter => {
+                    result.Append(novelChapter.ToString()) ;
                     result.Append(this.LineBreak + this.LineBreak);
-                    result.Append(novelChapter.Content);
                 });
+                result.Remove(result.Length - LineBreak.Length*2, LineBreak.Length*2);
                 return result.ToString();
             }
-            set
-            {
-                this.SetContent(value);
-            }
+            set=>this.SetContent(value);
+            
         }
-        public int Length=>this.Title.Length + this.PrologueLength + this._chapters.Sum(it => it.Length);
+        public int Length=>this.PrologueLength + this._chapters.Sum(it =>it.Title.Length + it.Length);
         public NovelChapter[] Chapters =>this._chapters.ToArray();
         public List<NovelChapter> ChapterList => this._chapters;
 
 
-        public XmlDocument Xml
-        {
-            get
-            {
-                XmlDocument xml = new XmlDocument();
-
-                XmlElement novel = xml.CreateElement(@"novel");
-                xml.AppendChild(novel);
-
-                #region 添加名称
-                XmlElement title = xml.CreateElement(@"title");
-                novel.AppendChild(title);
-                title.InnerText = this.Title;
-                #endregion
-
-                #region 添加序章
-                XmlElement prologue = xml.CreateElement(@"prologue");
-                novel.AppendChild(prologue);
-                foreach (string str in this._prologue)
-                {
-                    XmlElement p = xml.CreateElement(@"p");
-                    prologue.AppendChild(p);
-                    p.InnerText = str;
-                }
-                #endregion
-
-
-                #region 添加章节
-                XmlElement chapters = xml.CreateElement(@"chapters");
-                novel.AppendChild(chapters);
-                foreach (NovelChapter chapter in this._chapters)
-                {
-                    XmlElement xml_chapter = xml.CreateElement(@"chapter");
-                    chapters.AppendChild(xml_chapter);
-
-                    XmlElement chapter_title = xml.CreateElement(@"title");
-                    xml_chapter.AppendChild(chapter_title);
-                    chapter_title.InnerText = chapter.Title;
-
-                    XmlElement chapter_content = xml.CreateElement(@"content");
-                    xml_chapter.AppendChild(chapter_content);
-
-                    foreach (string str in NovelChapter.Split(chapter.Content))
-                    {
-                        XmlElement p = xml.CreateElement(@"p");
-                        chapter_content.AppendChild(p);
-                        p.InnerText = str;
-                    }
-
-                }
-                #endregion
-
-                return xml;
-            }
-        }
+        public XDocument Xml =>new XDocument(s_defaultDeclaration,new XElement(@"novel"
+                    ,new XElement(@"title",this.Title)
+                    ,new XElement(@"prologue",_prologue.Select(it=>new XElement(@"p",it)))
+                    ,new XElement(@"chapters"
+                        ,_chapters.Select(it=>new XElement(@"chapter"
+                            ,new XElement(@"title",it.Title)
+                            ,new XElement(@"content", NovelChapter.Split(it.Content).Select(it => new XElement(@"p", it)))
+                            ))
+                        )
+                    ));
+            
+        
 
 
 
@@ -355,7 +270,7 @@ namespace KalevaAalto.Models
             {
                 if (titleRegex.IsMatch(contentLines[pos]))
                 {
-                    this._chapters.Add(new NovelChapter(contentLines[pos]) { LineBreak = this.LineBreak });
+                    this._chapters.Add(new NovelChapter(contentLines[pos]) { LineBreak = this.LineBreak,BlankCharNumber = BlankCharNumber });
                 }
                 else
                 {
@@ -429,421 +344,294 @@ namespace KalevaAalto.Models
         {
             this.Xml.Save(fileName);
         }
-        public static Novel LoadNovelFromXml(XmlDocument xml)
+
+
+
+        public static Novel LoadNovelFromXml(string fileName)
         {
+            XDocument xml = XDocument.Load(fileName);
+            Novel result = new Novel();
 
+            XElement? rootElement = xml.Root;
+            if(rootElement is null)throw new Exception($"无法将“{fileName}”加载为XML文档；");
 
-            if (xml.DocumentElement is null)
+            XElement? titleElement = rootElement.Element(@"title");
+            if(titleElement is not null && string.IsNullOrEmpty(titleElement.Value))result.Title = titleElement.Value;
+            
+
+            XElement? prologueElement = rootElement.Element(@"prologue");
+            if(prologueElement is not null)
             {
-                throw new Exception(@"此XML文档为空！");
+                IEnumerable<XElement> pElements = prologueElement.Elements(@"p");
+                foreach (XElement pElement in pElements) result.PrologueAppend(pElement.Value);
             }
 
-            #region 录入标题
-            var title = xml.DocumentElement.SelectSingleNode(@"title");
-            if (title == null)
+            XElement? chaptersElement = rootElement.Element(@"chapters");
+            if (chaptersElement is not null)
             {
-                throw new Exception(@"此XML中找不到小说标题！！！");
-            }
-            Novel result = new Novel(title.InnerText);
-            #endregion
-
-
-
-
-
-            #region 录入序章
-            var prologue = xml.DocumentElement.SelectSingleNode(@"prologue");
-            if (prologue == null)
-            {
-                throw new Exception(@"此XML中找不到小说序章！！！");
-            }
-            result.Prologue = @"\n".Join(prologue.ChildNodes.Cast<XmlNode>().Select(it => it.InnerText).ToArray());
-            #endregion
-
-
-            #region 录入章节
-            var chapters = xml.DocumentElement.SelectSingleNode(@"chapters");
-            if (chapters is null)
-            {
-                throw new Exception(@"此XML中找不到小说章节！！！");
-            }
-            foreach (XmlNode chapter_node in chapters.ChildNodes)
-            {
-                var chapter_name = chapter_node.SelectSingleNode(@"title");
-                if (chapter_name == null)
+                IEnumerable<XElement> chapterElements = chaptersElement.Elements(@"chapter");
+                foreach(XElement chapterElement in chapterElements)
                 {
-                    throw new Exception(@"此XML中小说章节格式有误！！！");
-                }
-                NovelChapter chapter = new NovelChapter(chapter_name.InnerText);
-                result.AddChapter(chapter);
-
-                var content = chapter_node.SelectSingleNode("content");
-                if (content == null)
-                {
-                    throw new Exception($"此XML中小说“{chapter.Title}”章节格式有误！！！");
-                }
-                foreach (XmlNode p in content.ChildNodes)
-                {
-                    chapter.Append(p.InnerText);
+                    string chapterName = @"第0000章-未知章节";
+                    XElement? chapterTitleElement = chapterElement.Element(@"title");
+                    if(chapterTitleElement is not null)chapterName = chapterTitleElement.Value;
+                    XElement? contentElement = chapterElement.Element(@"content");
+                    if(contentElement is not null)
+                    {
+                        IEnumerable<XElement> pElements = contentElement.Elements(@"p");
+                        NovelChapter chapter = new NovelChapter(chapterName);
+                        result.AddChapter(chapter);
+                        foreach(XElement pElement in pElements)chapter.Append(pElement.Value);
+                    }
                 }
             }
-            #endregion
+
 
 
             return result;
 
 
         }
-        public static Novel LoadNovelFromXml(string fileName)
-        {
-            XmlDocument xml = new XmlDocument();
-            xml.Load(fileName);
-            return LoadNovelFromXml(xml);
-        }
 
 
-
-        private static XmlDocument s_containerXmlXml
+        private static string s_uuid
         {
             get
             {
+                StringBuilder rs = new StringBuilder(@"urn:uuid:");
 
+                const string chars = @"abdcefghijklmnopqrstuvwxyz0123456789";    //设定可生成的的随机字符
+                Random random = new Random();
+                int[] lengths = { 8, 4, 4, 4, 12 };
+
+                foreach (int length in lengths)
                 {
-                    XDocument xml = new XDocument(
-                        new XDeclaration("1.0", "utf-8", null),
-                        new XElement(@"container",
-                            new XAttribute(@"version",@"1.0"),
-                            new XElement(@"rootfiles",
-                                new XElement(@"rootfile")
+                    rs.Append(GetRandomString(chars, length));
+                    rs.Append('-');
+                }
+                if (rs.Length > 0) rs.Remove(rs.Length - 1, 1);
+
+                return rs.ToString();
+            }
+        }
+        private string _uuid = s_uuid;
+        private static XDeclaration s_defaultDeclaration => new XDeclaration("1.0", "utf-8", null);
+        private readonly static XNamespace s_containerXmlXmlNs = @"urn:oasis:names:tc:opendocument:xmlns:container";
+        private static XDocument s_containerXmlXml
+        {
+            get
+            {
+                XNamespace ns = s_containerXmlXmlNs;
+                return new XDocument(
+                        s_defaultDeclaration,
+                        new XElement(ns + @"container",
+                            new XAttribute(@"version", @"1.0"),
+                            new XElement(ns + @"rootfiles",
+                                new XElement(ns + @"rootfile", new XAttribute(@"full-path", @"OPS/content.opf"), new XAttribute(@"media-type", @"application/oebps-package+xml"))
                                 )
                             )
-                    ) ;
-
-                }
-
-
-
-
-
-
-
-
-
-
-                {
-
-
-
-                    XmlDocument result = new XmlDocument();
-                    result.AppendChild(result.CreateXmlDeclaration(@"1.0", @"utf-8", null));
-                    {
-
-                        XmlElement container = result.CreateElement(@"container");
-                        result.AppendChild(container);
-                        container.SetAttribute(@"version", @"1.0");
-                        container.SetAttribute(@"xmlns", @"urn:oasis:names:tc:opendocument:xmlns:container");
-
-
-                        XmlElement rootfiles = result.CreateElement(@"rootfiles");
-                        container.AppendChild(rootfiles);
-
-                        XmlElement rootfile = result.CreateElement(@"rootfile");
-                        rootfiles.AppendChild(rootfile);
-                        rootfile.SetAttribute(@"full-path", @"OPS/content.opf");
-                        rootfile.SetAttribute(@"media-type", @"application/oebps-package+xml");
-
-                    }
-                    return result;
-
-
-                }
-
-
-
-
+                    );
             }
         }
-        public byte[] epub
+
+
+        private XDocument contentOpfXml
         {
             get
             {
-                //生成UUID
-                string uuid;  //获取到一个随机的UUID码
+                XNamespace ns = @"http://www.idpf.org/2007/opf";
+                XNamespace dcNs = @"http://purl.org/dc/elements/1.1/";
+
+
+                XElement rootElement = new XElement(ns + @"package", new XAttribute(@"unique-identifier", @"BookId"), new XAttribute(@"version", @"2.0"));
+                XDocument result = new XDocument(s_defaultDeclaration, rootElement);
+
+                rootElement.Add(
+                    new XElement(ns + @"metadata", new XAttribute(XNamespace.Xmlns + @"dc", dcNs),
+                            new XElement(dcNs + @"identifier", new XAttribute(@"id", @"BookId"), new XAttribute(@"scheme", @"UUID"), _uuid),
+                            new XElement(dcNs + @"language", @"cn"),
+                            new XElement(dcNs + @"title", this.Title),
+                            new XElement(ns + @"meta", new XAttribute(@"content", @"1.9.0"), new XAttribute(@"name", @"Sigil version")),
+                            new XElement(dcNs + @"date", new XAttribute(@"event", @"modification"), DateTime.Today.ToString(@"yyyy-MM-dd"))
+                            )
+                    );
+                XElement manifestElement = new XElement(ns + @"manifest", new XElement(ns + @"item", new XAttribute(@"href", @"toc.ncx"), new XAttribute(@"id", @"ncx"), new XAttribute(@"media-type", @"application/x-dtbncx+xml")));
+                for(int i = 0; i <= _chapters.Count; i++)
                 {
-                    StringBuilder rs = new StringBuilder(@"urn:uuid:");
-
-                    const string chars = @"abdcefghijklmnopqrstuvwxyz0123456789";    //设定可生成的的随机字符
-                    Random random = new Random();
-                    int[] lengths = { 8, 4, 4, 4, 12 };
-
-                    foreach (int length in lengths)
-                    {
-                        rs.Append(GetRandomString(chars, length));
-                        rs.Append('-');
-                    }
-                    if (rs.Length > 0) rs.Remove(rs.Length - 1, 1);
-
-                    uuid = rs.ToString();
+                    manifestElement.Add(new XElement(ns + @"item", new XAttribute(@"href", $"Text/Section{i.ToString(@"0000")}.xhtml"), new XAttribute(@"id", $"Section{i.ToString(@"0000")}.xhtml"), new XAttribute(@"media-type", @"application/xhtml+xml")));
                 }
 
 
+                rootElement.Add(manifestElement);
+                rootElement.Add(
+                    new XElement(ns + @"spine", new XAttribute(@"toc", @"ncx"),
+                            Enumerable.Range(0, _chapters.Count).Select(i => new XElement(ns + @"itemref", new XAttribute(@"idref", $"Section{i.ToString(@"0000")}.xhtml")))
+                            )
+                    );
 
-                #region 创建 content.opf文档
-                XmlDocument content_opf_xml = new XmlDocument();
-                content_opf_xml.AppendChild(content_opf_xml.CreateXmlDeclaration(@"1.0", @"utf-8", null));
-                {
-
-                    XmlElement package = content_opf_xml.CreateElement(@"package");
-                    content_opf_xml.AppendChild(package);
-                    package.SetAttribute(@"xmlns", "http://www.idpf.org/2007/opf");
-                    package.SetAttribute(@"unique-identifier", @"BookId");
-                    package.SetAttribute(@"version", @"2.0");
-                    {
-                        XmlElement metadata = content_opf_xml.CreateElement(@"metadata");
-                        package.AppendChild(metadata);
-                        metadata.SetAttribute(@"xmlns:dc", @"http://purl.org/dc/elements/1.1/");
-                        metadata.SetAttribute(@"xmlns:opf", @"http://www.idpf.org/2007/opf");
-                        {
-                            XmlElement identifier = content_opf_xml.CreateElement(@"dc", @"identifier", @"http://purl.org/dc/elements/1.1/");
-                            metadata.AppendChild(identifier);
-                            identifier.SetAttribute(@"id", @"BookId");
-                            identifier.SetAttribute(@"opf:scheme", @"UUID");
-                            identifier.InnerText = uuid;
-
-
-                            XmlElement language = content_opf_xml.CreateElement(@"dc", @"language", @"http://purl.org/dc/elements/1.1/");
-                            metadata.AppendChild(language);
-                            language.InnerText = @"cn";
-
-                            XmlElement title = content_opf_xml.CreateElement(@"dc", @"title", @"http://purl.org/dc/elements/1.1/");
-                            metadata.AppendChild(title);
-                            title.InnerText = this.Title;
-
-                            XmlElement meta = content_opf_xml.CreateElement(@"meta");
-                            metadata.AppendChild(meta);
-                            meta.SetAttribute(@"content", @"1.9.0");
-                            meta.SetAttribute(@"name", @"Sigil version");
-
-                            XmlElement date = content_opf_xml.CreateElement(@"dc", @"date", @"http://purl.org/dc/elements/1.1/");
-                            metadata.AppendChild(date);
-                            date.SetAttribute(@"opf:event", @"modification");
-                            date.SetAttribute(@"xmlns:opf", @"http://www.idpf.org/2007/opf");
-                            date.InnerText = DateTime.Now.ToString(@"yyyy-MM-dd");
-                        }
-
-
-                        XmlElement manifest = content_opf_xml.CreateElement(@"manifest");
-                        package.AppendChild(manifest);
-                        {
-                            XmlElement item;
-
-                            item = content_opf_xml.CreateElement(@"item");
-                            manifest.AppendChild(item);
-                            item.SetAttribute(@"href", @"toc.ncx");
-                            item.SetAttribute(@"id", @"ncx");
-                            item.SetAttribute(@"media-type", @"application/x-dtbncx+xml");
-
-                            for (int i = 0; i <= this._chapters.Count; i++)
-                            {
-                                item = content_opf_xml.CreateElement(@"item");
-                                manifest.AppendChild(item);
-                                item.SetAttribute(@"href", $"Text/Section{i.ToString(@"0000")}.xhtml");
-                                item.SetAttribute(@"id", $"Section{i.ToString(@"0000")}.xhtml");
-                                item.SetAttribute(@"media-type", @"application/xhtml+xml");
-                            }
-
-                        }
-
-
-                        XmlElement spine = content_opf_xml.CreateElement(@"spine");
-                        package.AppendChild(spine);
-                        spine.SetAttribute(@"toc", @"ncx");
-                        {
-                            for (int i = 0; i <= this._chapters.Count; i++)
-                            {
-                                XmlElement itemref = content_opf_xml.CreateElement(@"itemref");
-                                spine.AppendChild(itemref);
-                                itemref.SetAttribute(@"idref", $"Section{i.ToString(@"0000")}.xhtml");
-                            }
-                        }
-                    }
-
-                }
-
-                #endregion
-
-
-
-
-                #region 创建 toc_ncx_xml文档
-                XmlDocument toc_ncx_xml = new XmlDocument();
-                toc_ncx_xml.AppendChild(toc_ncx_xml.CreateXmlDeclaration(@"1.0", @"utf-8", null));
-                XmlElement ncx = toc_ncx_xml.CreateElement(@"ncx");
-                toc_ncx_xml.AppendChild(ncx);
-                ncx.SetAttribute(@"xmlns", @"http://www.daisy.org/z3986/2005/ncx/");
-                {
-                    XmlElement head = toc_ncx_xml.CreateElement(@"head");
-                    ncx.AppendChild(head);
-                    {
-                        XmlElement meta;
-
-                        meta = toc_ncx_xml.CreateElement(@"meta");
-                        head.AppendChild(meta);
-                        meta.SetAttribute(@"content", uuid);
-                        meta.SetAttribute(@"name", @"dtb:uid");
-
-                        meta = toc_ncx_xml.CreateElement(@"meta");
-                        head.AppendChild(meta);
-                        meta.SetAttribute(@"content", @"1");
-                        meta.SetAttribute(@"name", @"dtb:depth");
-
-                        meta = toc_ncx_xml.CreateElement(@"meta");
-                        head.AppendChild(meta);
-                        meta.SetAttribute(@"content", @"0");
-                        meta.SetAttribute(@"name", @"dtb:totalPageCount");
-
-                        meta = toc_ncx_xml.CreateElement(@"meta");
-                        head.AppendChild(meta);
-                        meta.SetAttribute(@"content", @"0");
-                        meta.SetAttribute(@"name", @"dtb:maxPageNumber");
-                    }
-
-
-                    XmlElement docTitle = toc_ncx_xml.CreateElement(@"docTitle");
-                    ncx.AppendChild(docTitle);
-                    {
-                        XmlElement text = toc_ncx_xml.CreateElement(@"docTitle");
-                        docTitle.AppendChild(text);
-                        text.InnerText = this.Title;
-                    }
-
-
-                    XmlElement navMap = toc_ncx_xml.CreateElement(@"navMap");
-                    ncx.AppendChild(navMap);
-                    {
-                        Func<int, string, XmlElement> lambda = (order, title_name) =>
-                        {
-                            XmlElement navPoint = toc_ncx_xml.CreateElement(@"navPoint");
-                            navPoint.SetAttribute(@"id", @"navPoint-" + order.ToString());
-                            navPoint.SetAttribute(@"playOrder", order.ToString());
-                            {
-                                XmlElement navLabel = toc_ncx_xml.CreateElement(@"navLabel");
-                                navPoint.AppendChild(navLabel);
-                                {
-                                    XmlElement text = toc_ncx_xml.CreateElement(@"text");
-                                    navLabel.AppendChild(text);
-                                    text.InnerText = title_name;
-                                }
-
-
-                                XmlElement content = toc_ncx_xml.CreateElement(@"content");
-                                navPoint.AppendChild(content);
-                                content.SetAttribute(@"src", $"Text/Section{order.ToString(@"0000")}.xhtml");
-                            }
-
-                            return navPoint;
-                        };
-
-                        navMap.AppendChild(lambda(0, @"序章"));
-                        for (int i = 1; i <= this._chapters.Count; i++)
-                        {
-                            navMap.AppendChild(lambda(i, this._chapters[i - 1].Title));
-                        }
-
-
-                    }
-
-
-                }
-
-                #endregion
-
-
-                List<XmlDocument> xmls = new List<XmlDocument>();
-                xmls.Add(new NovelChapter(@"序章",this.Prologue).HtmlDocument);
-                foreach (NovelChapter chapter in this._chapters)
-                {
-                    xmls.Add(chapter.HtmlDocument);
-                }
-
-
-
-                #region 建立zip文件并保存
-
-
-
-                using (MemoryStream zipStream = new MemoryStream())
-                {
-                    ZipArchive zipFile = new ZipArchive(zipStream, ZipArchiveMode.Create, true);
-                    Stream stream; //定义一个流
-                    StreamWriter writer;
-                    #region 创建文件夹
-                    zipFile.CreateEntry(@"META-INF/");
-                    zipFile.CreateEntry(@"OPS/");
-                    zipFile.CreateEntry(@"OPS/Text/");
-                    #endregion
-
-                    #region 添加mimetype
-                    var mimetype = zipFile.CreateEntry(@"mimetype");
-                    stream = mimetype.Open();
-                    writer = new StreamWriter(stream);
-                    writer.WriteLine(@"application/epub+zip");
-                    writer.Close();
-                    stream.Close();
-                    #endregion
-
-                    #region 添加container.xml文档
-                    var container_xml = zipFile.CreateEntry(@"META-INF/container.xml");
-                    stream = container_xml.Open();
-                    s_containerXmlXml.Save(stream);
-                    stream.Close();
-                    #endregion
-
-                    #region 添加content.opf
-                    var content_opf = zipFile.CreateEntry(@"OPS/content.opf");
-                    stream = content_opf.Open();
-                    content_opf_xml.Save(stream);
-                    stream.Close();
-                    #endregion
-
-                    #region 添加toc.ncx
-                    var toc_ncx = zipFile.CreateEntry(@"OPS/toc.ncx");
-                    stream = toc_ncx.Open();
-                    toc_ncx_xml.Save(stream);
-                    stream.Close();
-                    #endregion
-
-
-                    #region 添加Text文档
-                    for (int i = 0; i < xmls.Count; i++)
-                    {
-                        var text = zipFile.CreateEntry($"OPS/Text/Section{i.ToString(@"0000")}.xhtml");
-                        stream = text.Open();
-                        xmls[i].Save(stream);
-                        stream.Close();
-                    }
-                    #endregion
-
-
-
-                    zipFile.Dispose();//保存zip文档
-                    zipStream.Seek(0, SeekOrigin.Begin);
-                    #endregion
-
-                    return zipStream.ToArray();
-                }
-
-
+                return result;
             }
         }
-        public void SaveAsEpub(string fileName)
+
+        private readonly static XNamespace s_tocNcxXmlNs = @"http://www.daisy.org/z3986/2005/ncx/";
+        private XDocument tocNcxXml
         {
-            File.WriteAllBytes(fileName, this.epub);
+            get
+            {
+                XNamespace ns = s_tocNcxXmlNs;
+                return new XDocument(s_defaultDeclaration,
+                    new XElement(ns + @"ncx",
+                        new XElement(ns + @"head",
+                            new XElement(ns + @"meta", new XAttribute(@"content", _uuid), new XAttribute(@"name", @"dtb:uid")),
+                            new XElement(ns + @"meta", new XAttribute(@"content", @"1"), new XAttribute(@"name", @"dtb:depth")),
+                            new XElement(ns + @"meta", new XAttribute(@"content", @"0"), new XAttribute(@"name", @"dtb:totalPageCount")),
+                            new XElement(ns + @"meta", new XAttribute(@"content", @"0"), new XAttribute(@"name", @"dtb:maxPageNumber"))
+                            ),
+                        new XElement(ns + @"docTitle", new XElement(ns + @"docTitle", this.Title)),
+                        new XElement(ns + @"navMap",
+                            Enumerable.Range(0, _chapters.Count).Select(i =>
+                            {
+                                return new XElement(ns + @"navPoint", new XAttribute(@"id", $"navPoint-{i}"), new XAttribute(@"playOrder", i.ToString()),
+                                    new XElement(ns+ @"navLabel",new XElement(ns + @"text", i == 0 ? @"序章" : _chapters[i].Title)),
+                                    new XElement(ns+ @"content",new XAttribute(@"src",$"Text/Section{i.ToString(@"0000")}.xhtml"))
+                                    );
+                            })
+                            )
+                    ));
+                    
+            }
+        }
+        public byte[] GetEpub()
+        {
+            using (MemoryStream zipStream = new MemoryStream())
+            {
+                ZipArchive zipFile = new ZipArchive(zipStream, ZipArchiveMode.Create, true);
+                Stream stream; //定义一个流
+                StreamWriter writer;
+                #region 创建文件夹
+                zipFile.CreateEntry(@"META-INF/");
+                zipFile.CreateEntry(@"OPS/");
+                zipFile.CreateEntry(@"OPS/Text/");
+                #endregion
+
+                #region 添加mimetype
+                stream = zipFile.CreateEntry(@"mimetype").Open();
+                writer = new StreamWriter(stream);
+                writer.WriteLine(@"application/epub+zip");
+                writer.Close();
+                stream.Close();
+                #endregion
+
+                #region 添加container.xml文档
+                stream = zipFile.CreateEntry(@"META-INF/container.xml").Open();
+                s_containerXmlXml.Save(stream);
+                stream.Close();
+                #endregion
+
+                #region 添加content.opf
+                stream = zipFile.CreateEntry(@"OPS/content.opf").Open();
+                contentOpfXml.Save(stream);
+                stream.Close();
+                #endregion
+
+
+
+                #region 添加toc.ncx
+                stream = zipFile.CreateEntry(@"OPS/toc.ncx").Open();
+                tocNcxXml.Save(stream);
+                stream.Close();
+                #endregion
+
+
+                #region 添加Text文档
+                XDocument[] xDocuments = _chapters.AsParallel().Select(it => it.HtmlDocument).ToArray();
+                for (int i = 0; i < xDocuments.Length; i++)
+                {
+                    stream = zipFile.CreateEntry($"OPS/Text/Section{i.ToString(@"0000")}.xhtml").Open();
+                    xDocuments[i].Save(stream);
+                    stream.Close();
+                }
+                #endregion
+
+
+
+                zipFile.Dispose();//保存zip文档
+                zipStream.Seek(0, SeekOrigin.Begin);
+
+
+                return zipStream.ToArray();
+            }
+        }
+        public async Task<byte[]> GetEpubAsync(CancellationToken cancellationToken = default)
+        {
+
+            using (MemoryStream zipStream = new MemoryStream())
+            {
+                ZipArchive zipFile = new ZipArchive(zipStream, ZipArchiveMode.Create, true);
+                Stream stream; //定义一个流
+                StreamWriter writer;
+                #region 创建文件夹
+                zipFile.CreateEntry(@"META-INF/");
+                zipFile.CreateEntry(@"OPS/");
+                zipFile.CreateEntry(@"OPS/Text/");
+                #endregion
+
+                #region 添加mimetype
+                stream = zipFile.CreateEntry(@"mimetype").Open();
+                writer = new StreamWriter(stream);
+                await writer.WriteAsync(@"application/epub+zip");
+                writer.Close();
+                stream.Close();
+                #endregion
+
+                #region 添加container.xml文档
+                stream = zipFile.CreateEntry(@"META-INF/container.xml").Open();
+                await s_containerXmlXml.SaveAsync(stream, SaveOptions.None,cancellationToken);
+                stream.Close();
+                #endregion
+
+                #region 添加content.opf
+                stream = zipFile.CreateEntry(@"OPS/content.opf").Open();
+                await contentOpfXml.SaveAsync(stream, SaveOptions.None, cancellationToken);
+                stream.Close();
+                #endregion
+
+
+
+                #region 添加toc.ncx
+                stream = zipFile.CreateEntry(@"OPS/toc.ncx").Open();
+                await tocNcxXml.SaveAsync(stream, SaveOptions.None, cancellationToken);
+                stream.Close();
+                #endregion
+
+
+                #region 添加Text文档
+                XDocument[] xDocuments = _chapters.AsParallel().Select(it => it.HtmlDocument).ToArray();
+                for (int i = 0; i < xDocuments.Length; i++)
+                {
+                    stream = zipFile.CreateEntry($"OPS/Text/Section{i.ToString(@"0000")}.xhtml").Open();
+                    await xDocuments[i].SaveAsync(stream, SaveOptions.None, cancellationToken);
+                    stream.Close();
+                }
+                #endregion
+
+
+
+                zipFile.Dispose();//保存zip文档
+                zipStream.Seek(0, SeekOrigin.Begin);
+
+
+                return zipStream.ToArray();
+            }
         }
 
-        public async Task SaveAsEpubAsync(string fileName)
+        public void SaveAsEpub(string fileName)
         {
-            await File.WriteAllBytesAsync(fileName, this.epub);
+            File.WriteAllBytes(fileName, this.GetEpub());
+        }
+        public async Task SaveAsEpubAsync(string fileName, CancellationToken cancellationToken = default)
+        {
+            await File.WriteAllBytesAsync(fileName,await this.GetEpubAsync(cancellationToken));
         }
 
         /// <summary>
@@ -882,7 +670,7 @@ namespace KalevaAalto.Models
         }
         private static Novel LoadNovelFromEpub(ZipArchive zipArchive)
         {
-            Novel result = new Novel(@"");
+            Novel result = new Novel();
             XmlDocument xml = new XmlDocument();
             XmlNamespaceManager namespaceManager;
             #region 读取文件列表
@@ -1069,6 +857,12 @@ namespace KalevaAalto.Models
             }
         }
 
+        public void Clear()
+        {
+            this._prologue.Clear();
+            this._chapters.ForEach(chapter => { chapter.Dispose(); });
+            this._chapters.Clear();
+        }
 
 
         public void Dispose()
