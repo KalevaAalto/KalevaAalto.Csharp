@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace KalevaAalto
 {
-    public static partial class Main
+    public static partial class Static
     {
         #region 文件流
 
@@ -128,13 +128,13 @@ namespace KalevaAalto
         /// <param name="fileName">要获取字符串的文本文档的路径</param>
         /// <param name="encoding">要获取字符串的字符集，无则自动解析字符集</param>
         /// <returns>返回从路径fileName的文本文档所获取的字符串</returns>
-        public static Task<string> GetStringFromFileAsync(string fileName, Encoding? encoding = null)
+        public static Task<string> GetStringFromFileAsync(string fileName,CancellationToken token = default, Encoding? encoding = null)
         {
             if (encoding is null)
             {
                 encoding = GetEncoding(fileName);
             }
-            return File.ReadAllTextAsync(fileName, encoding);
+            return File.ReadAllTextAsync(fileName, encoding, token);
         }
 
         /// <summary>
@@ -154,9 +154,9 @@ namespace KalevaAalto
         /// <param name="fileNameInfo">要获取字符串的文件名信息对象</param>
         /// <param name="encoding">要获取字符串的字符集，无则自动解析字符集</param>
         /// <returns>返回从路径fileName的文本文档所获取的字符串</returns>
-        public static Task<string> GetStringFromFileAsync(Models.FileSystem.FileNameInfo fileNameInfo, Encoding? encoding = null)
+        public static Task<string> GetStringFromFileAsync(Models.FileSystem.FileNameInfo fileNameInfo, CancellationToken token = default, Encoding? encoding = null)
         {
-            return GetStringFromFileAsync(fileNameInfo.FileName, encoding);
+            return GetStringFromFileAsync(fileNameInfo.FileName, token, encoding);
         }
 
         /// <summary>

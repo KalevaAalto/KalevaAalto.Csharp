@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace KalevaAalto
 {
-    public static partial class Main
+    public static partial class Static
     {
         /// <summary>
         /// 获取工作簿

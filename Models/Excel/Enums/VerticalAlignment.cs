@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace KalevaAalto.Models.Excel.Enums
 {
-    public enum VerticalAlignment
+    public enum VerticalAlignment : byte
     {
         Top, Center, Bottom
     }

@@ -125,7 +125,7 @@ namespace KalevaAalto.Models.Excel
 
             return null;
         }
-        public System.Data.DataTable? GetDataTable(string startString, string checkColumnName = emptyString)
+        public System.Data.DataTable? GetDataTable(string startString, string checkColumnName = EmptyString)
         {
             CellPos? startCellPos = SearchString(startString);
             if (startCellPos == null) { throw new Exception($"找不到起始标志“{startString}”；"); }

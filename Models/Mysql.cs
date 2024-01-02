@@ -18,14 +18,7 @@ namespace KalevaAalto.Models
     {
         public SqlSugarClient db { private set; get; }
 
-        /// <summary>
-        /// Mysql常规构造函数
-        /// </summary>
-        /// <param name="localhost">主机名</param>
-        /// <param name="port">端口</param>
-        /// <param name="username">用户名</param>
-        /// <param name="password">密码</param>
-        /// <param name="databasename">数据库名称</param>
+
         public Mysql(string localhost, int port, string username, string password, string databasename)
         {
             db = new SqlSugarClient(new ConnectionConfig()
@@ -35,14 +28,9 @@ namespace KalevaAalto.Models
                 IsAutoCloseConnection = true, // 自动释放数据务，如果存在事务，在事务结束后释放  
                 InitKeyType = InitKeyType.Attribute, // 从实体特性中获取主键自增列信息  
             });
-
-
         }
 
 
-        /// <summary>
-        /// Mysql常规析造函数
-        /// </summary>
         ~Mysql()
         {
             db.Close();
@@ -55,7 +43,6 @@ namespace KalevaAalto.Models
             try
             {
                 return await db.Ado.GetDataTableAsync(sql);
-
             }
             catch (Exception error)
             {
@@ -277,7 +264,7 @@ namespace KalevaAalto.Models
 
 
 
-        private readonly static Dictionary<string, string> mysqlTypeStringToCsharpTypeString = new Dictionary<string, string>
+        private readonly static Dictionary<string, string> s_mysqlTypeStringToCsharpTypeString = new Dictionary<string, string>
         {
             {@"varchar",@"string" },
             {@"text",@"string" },
@@ -320,11 +307,11 @@ namespace KalevaAalto.Models
 
                 if (item.IsNullable)
                 {
-                    result.AppendLine($"\tpublic {mysqlTypeStringToCsharpTypeString[item.DataType]}? {item.DbColumnName} {{ get; set; }}");
+                    result.AppendLine($"\tpublic {s_mysqlTypeStringToCsharpTypeString[item.DataType]}? {item.DbColumnName} {{ get; set; }}");
                 }
                 else
                 {
-                    result.AppendLine($"\tpublic {mysqlTypeStringToCsharpTypeString[item.DataType]} {item.DbColumnName} {{ get; set; }}");
+                    result.AppendLine($"\tpublic {s_mysqlTypeStringToCsharpTypeString[item.DataType]} {item.DbColumnName} {{ get; set; }}");
                 }
 
 

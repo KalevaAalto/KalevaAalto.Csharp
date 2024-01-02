@@ -10,7 +10,7 @@ namespace KalevaAalto;
 /// <summary>
 /// KalevaAalto个人的数学专用库
 /// </summary>
-public static partial class Main
+public static partial class Static
 {
 
     /// <summary>

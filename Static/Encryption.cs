@@ -10,7 +10,7 @@ namespace KalevaAalto;
 /// <summary>
 /// 加密工具
 /// </summary>
-public static partial class Main
+public static partial class Static
 {
     /// <summary>
     /// SHA1加密工具

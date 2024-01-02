@@ -11,10 +11,11 @@ namespace KalevaAalto.Models.Excel
 {
     public abstract class IRange
     {
-        public abstract RangePos Pos { get; }
 
-        public int RowCount { get => Pos.EndPos.Row - Pos.StartPos.Row + 1; }
-        public int ColumnCount { get => Pos.EndPos.Column - Pos.StartPos.Column + 1; }
+
+        public abstract RangePos Pos { get; }
+        public int RowCount  => Pos.EndPos.Row - Pos.StartPos.Row + 1; 
+        public int ColumnCount => Pos.EndPos.Column - Pos.StartPos.Column + 1; 
         public abstract IStyle Style { get; }
         public abstract ErrorType ErrorType { get; }
         public bool IsError => this.ErrorType != ErrorType.None;
@@ -123,10 +124,8 @@ namespace KalevaAalto.Models.Excel
         protected abstract IRange GetRange(RangePos rangePos);
 
 
-        public virtual void SetTable(string tableName)
-        {
-            throw new Exception(@"函数“void SetTable(string tableName)”没有实现；");
-        }
+        public virtual void SetTable(string tableName)=>throw new NotImplementedException();
+        
 
 
     }

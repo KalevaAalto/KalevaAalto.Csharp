@@ -20,7 +20,7 @@ using KalevaAalto.Models;
 
 namespace KalevaAalto;
 
-public static partial class Main
+public static partial class Static
 {
 
 
@@ -407,7 +407,7 @@ public static partial class Main
 
 
 
-    public static DataTable GetNewDataTable(this ExcelColumnMatch[] excelColumnMatches,string tableName = Main.emptyString)
+    public static DataTable GetNewDataTable(this ExcelColumnMatch[] excelColumnMatches,string tableName = EmptyString)
     {
         DataTable result = new DataTable(tableName);
         foreach (ExcelColumnMatch excelColumnMatch in excelColumnMatches)
@@ -453,14 +453,14 @@ public static partial class Main
 
 
         int rowE = 1;
-        string columnE = Main.emptyString;
+        string columnE = EmptyString;
         try
         {
             //添加数据
             foreach (DataRow excelRow in excelTable.Rows)
             {
                 rowE++;
-                columnE = Main.emptyString;
+                columnE = EmptyString;
                 DataRow newRow = table.Rows.Add();
                 foreach (ExcelColumnMatch excelColumnMatch in excelColumnMatchs)
                 {

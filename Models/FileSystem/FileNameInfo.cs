@@ -12,134 +12,45 @@ namespace KalevaAalto.Models.FileSystem
     /// </summary>
     public class FileNameInfo
     {
-        /// <summary>
-        /// 文件所在文件夹的路径
-        /// </summary>
-        public string Path { get; } = string.Empty;
-
-        /// <summary>
-        /// 文件名（不包含后缀名）
-        /// </summary>
-        public string Name { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 文件后缀名
-        /// </summary>
-        public string Suffix { get; } = string.Empty;
-
-        /// <summary>
-        /// 文件名类的状态，异常则为false，此时的文件名对象无法正常使用
-        /// </summary>
-        public bool Status { get; } = false;
-
-        /// <summary>
-        /// 返回文件是否存在
-        /// </summary>
-        public bool Exists
-        {
-            get
-            {
-                return File.Exists(this.FileName);
-            }
-        }
 
 
-        public char Sign { get; } = '\\';
+        private string _path = string.Empty;
+        private string _name = string.Empty;
+        private string _suffix = string.Empty;
+        private bool _status = false;
 
-        /// <summary>
-        /// 创建解析文件路径所需要用到的正则表达式对象
-        /// </summary>
-        private readonly static Regex regex = new Regex(@"^((?<path>.+)[\\/])?(?<name>[^\\/]+?)(\.(?<suffix>[^\\\\./]+))?$");
-
-        /// <summary>
-        /// 以一个文件的文件路径来创建文件名对象
-        /// </summary>
-        /// <param name="fileName">文件的文件路径</param>
+        private char _sign = '\\';
+        private readonly static Regex s_regex = new Regex(@"^((?<path>.+)[\\/])?(?<name>[^\\/]+?)(\.(?<suffix>[^\\\\./]+))?$");
         public FileNameInfo(string? fileName)
         {
-            if (fileName is null)
-            {
-                return;
-            }
+            if (fileName is null) return;
+            Match match = s_regex.Match(fileName);
+            if (!match.Success)return;
+            if (fileName.Contains('/')) _sign = '/';
 
-            //拆分路径
-            Match match = regex.Match(fileName);
-            if (!match.Success)
-            {
-                return;
-            }
-
-            if (fileName.Contains('/'))
-            {
-                this.Sign = '/';
-            }
-            
-
-            this.Path = match.Groups[@"path"].Value;
-            this.Name = match.Groups[@"name"].Value;
-            this.Suffix = match.Groups[@"suffix"].Value.ToLower();
-            this.Status = true;
+            _path = match.Groups[@"path"].Value;
+            _name = match.Groups[@"name"].Value;
+            _suffix = match.Groups[@"suffix"].Value.ToLower();
+            _status = true;
         }
 
-        /// <summary>
-        /// 手动文件名对象
-        /// </summary>
-        /// <param name="path">文件所在文件夹的路径</param>
-        /// <param name="name">文件名（不包含后缀名）</param>
-        /// <param name="suffix">文件后缀名</param>
         public FileNameInfo(string path, string name, string? suffix = null)
         {
-            this.Path = path;
-            this.Name = name;
-            this.Suffix = suffix ?? string.Empty;
-            this.Status = true;
+            _path = path;
+            _name = name;
+            _suffix = suffix ?? string.Empty;
+            _status = true;
         }
 
-        /// <summary>
-        /// 返回此文件名对象的文件路径
-        /// </summary>
-        public string FileName
-        {
-            get
-            {
-                if (this.Path.Length > 0)
-                {
-                    return this.Path + this.Sign + this.PartialFileName;
-                }
-                else
-                {
-                    return this.PartialFileName;
-                }
-
-            }
-        }
-
-        /// <summary>
-        /// 文件大小
-        /// </summary>
-        public long Size => this.FileInfo.Length;
-
-        /// <summary>
-        /// 返回此文件名对象的文件名（有后缀名）
-        /// </summary>
-        public string PartialFileName
-        {
-            get
-            {
-                if (this.Suffix.Length > 0)
-                {
-                    return this.Name + '.' + this.Suffix;
-                }
-                else
-                {
-                    return this.Name;
-                }
-
-            }
-        }
-
-
-        public FileInfo FileInfo => new FileInfo(this.FileName);
+        public string Path => _path;
+        public string Name => _name;
+        public string Suffix => _suffix;
+        public bool Status => _status;
+        public bool Exists => File.Exists(FileName);
+        public string FileName => string.IsNullOrEmpty(_path) ? _path + _sign + PartialFileName : PartialFileName;
+        public long Size => FileInfo.Length;
+        public string PartialFileName => string.IsNullOrEmpty(_suffix) ? _name + '.' + _suffix : _name;
+        public FileInfo FileInfo => new FileInfo(FileName);
 
 
 
@@ -150,7 +61,7 @@ namespace KalevaAalto.Models.FileSystem
 
 namespace KalevaAalto
 {
-    public static partial class Main
+    public static partial class Static
     {
         /// <summary>
         /// 解析的文件路径数组，并返回文件名数组

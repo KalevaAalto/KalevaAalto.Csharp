@@ -40,9 +40,9 @@ namespace KalevaAalto.Models.DataTable
 
 namespace KalevaAalto
 {
-    public static partial class Main
+    public static partial class Static
     {
-        public static System.Data.DataTable GetEmptyDataTable(this Models.DataTable.DataTableColumnMatch[] dataTableColumnMatches,string tableName = emptyString)
+        public static System.Data.DataTable GetEmptyDataTable(this Models.DataTable.DataTableColumnMatch[] dataTableColumnMatches,string tableName = EmptyString)
         {
             System.Data.DataTable result = new System.Data.DataTable(tableName);
             foreach (Models.DataTable.DataTableColumnMatch dataTableColumnMatch in dataTableColumnMatches)

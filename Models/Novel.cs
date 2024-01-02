@@ -54,7 +54,7 @@ namespace KalevaAalto.Models
         string _lineBreak = DefaultLineBreak;
         string _title;
         List<string> _paragraphs = new List<string>();
-        public NovelChapter(string title, string content = emptyString)
+        public NovelChapter(string title, string content = EmptyString)
         {
             this._title = title;
             this.Content = content;
@@ -156,7 +156,7 @@ namespace KalevaAalto.Models
         {
             _title = s_defaultNovelName;
         }
-        public Novel(string title, string content = emptyString, string pattern = DefaultTitleRegexString)
+        public Novel(string title, string content = EmptyString, string pattern = DefaultTitleRegexString)
         {
             this._title = title;
             this.SetContent(content,pattern);
@@ -288,10 +288,8 @@ namespace KalevaAalto.Models
             }
             else
             {
-                this._chapters.ForEach(it =>
-                {
-                    if (it.Title == title) { this._chapters.Remove(it); return; }
-                });
+                NovelChapter? novelChapter = _chapters.FirstOrDefault(ch => ch.Title == title);
+                if(novelChapter is not null) _chapters.Remove(novelChapter);
             }
         }
         public void DeleteChapter(int index)

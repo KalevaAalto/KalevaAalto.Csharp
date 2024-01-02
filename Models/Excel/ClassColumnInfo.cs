@@ -15,11 +15,10 @@ namespace KalevaAalto.Models.Excel
     /// </summary>
     public class ClassColumnInfo
     {
-        public string ColumnName { get; set; } = string.Empty;
-        public string PropertyName { get; set; } = string.Empty;
-        public System.Type Type { get; set; } = typeof(string);
-
-        public DataColumnStyle excelDataColumn => new DataColumnStyle(this.ColumnName, this.Type);
+        public string ColumnName { get; init; } = string.Empty;
+        public string PropertyName { get; init; } = string.Empty;
+        public System.Type Type { get; init; } = typeof(string);
+        public DataColumnStyle ExcelDataColumn => new DataColumnStyle(ColumnName, Type);
 
     }
 }
@@ -27,7 +26,7 @@ namespace KalevaAalto.Models.Excel
 
 namespace KalevaAalto
 {
-    public static partial class Main
+    public static partial class Static
     {
         public static Models.Excel.ClassColumnInfo[] GetClassColumnInfos(this Type entityType)
         {
@@ -60,7 +59,7 @@ namespace KalevaAalto
         /// <param name="values">要转化的数组</param>
         /// <param name="tableName">表名</param>
         /// <returns>返回DataTable数据表</returns>
-        public static DataTable ToDataTable<T>(T[] values, string tableName = emptyString)
+        public static DataTable ToDataTable<T>(T[] values, string tableName = EmptyString)
         {
             DataTable result = new DataTable(tableName);
 

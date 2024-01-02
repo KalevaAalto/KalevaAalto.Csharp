@@ -10,6 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using KalevaAalto.Models.Excel.Enums;
+using SqlSugar;
 
 
 
@@ -19,143 +20,79 @@ namespace KalevaAalto.Models.Excel
 {
     public class DataColumnStyle
     {
-        
-
-
-        public string ColumnName { get; private set; }
-
+        private string _columnName;
+        private Type _type;
         private HorizontalAlignment? _horizontalAlignment = null;
+        private VerticalAlignment? _verticalAlignment = null;
+        private double? _width = null;
+        private string? _numberFormat = null;
+        private Color _fontColor = Color.Black;
+        private bool _isAddFoot = false;
+        public DataColumnStyle(string columnName, Type type)
+        {
+            _columnName = columnName;
+            _type = type;
+        }
+
+        public string ColumnName => _columnName;
+        public Type Type =>_type;
+        public Color FontColor { get=>_fontColor;init=> _fontColor=value; }
+        public bool IsAddFoot { get=> _isAddFoot; init=> _isAddFoot=value; }
         public HorizontalAlignment HorizontalAlignment
         {
             get
             {
-                if (this._horizontalAlignment is null)
+                if (_horizontalAlignment is null)
                 {
-                    if (this.Type.IsNumber())
-                    {
-                        return HorizontalAlignment.Right;
-                    }
-                    else if (this.Type.IsByteArray())
-                    {
-                        return HorizontalAlignment.Left;
-                    }
-                    else
-                    {
-                        return HorizontalAlignment.Center;
-                    }
+                    if (_type.IsNumber()) return HorizontalAlignment.Right;
+                    else if (_type.IsByteArray()) return HorizontalAlignment.Left;
+                    else return HorizontalAlignment.Center;
                 }
-                else
-                {
-                    return this._horizontalAlignment.Value;
-                }
+                else return this._horizontalAlignment.Value;
             }
-            set
-            {
-                this._horizontalAlignment = value;
-            }
+            init => _horizontalAlignment = value;
+
         }
-        private VerticalAlignment? _verticalAlignment = null;
         public VerticalAlignment VerticalAlignment
         {
-            get
-            {
-                if (this._verticalAlignment is null)
-                {
-                    return VerticalAlignment.Center;
-                }
-                else
-                {
-                    return this._verticalAlignment.Value;
-                }
-            }
-            set
-            {
-                this._verticalAlignment = value;
-            }
+            get => _verticalAlignment is null ? VerticalAlignment.Center : _verticalAlignment.Value;
+            init => _verticalAlignment = value;
         }
-        private double? _width = null;
         public double Width
         {
             get
             {
-                if (this._width is null)
+                if (_width is null)
                 {
-                    if (this.Type.IsOrNullableChar() || this.Type == typeof(byte) || this.Type == typeof(byte?))
-                    {
-                        return 6;
-                    }
-                    else if (this.Type.IsOrNullableBool())
-                    {
-                        return 8;
-                    }
-                    else if (this.Type.IsOrNullableNumber() || this.Type.IsOrNullableDateTime())
-                    {
-                        return 15;
-                    }
-                    else if (this.Type.IsByteArray())
-                    {
-                        return 30;
-                    }
-                    else
-                    {
-                        return 12;
-                    }
+                    if (_type.IsOrNullableChar() || _type == typeof(byte) || _type == typeof(byte?) || _type == typeof(sbyte) || _type == typeof(sbyte?)) return 6;
+                    else if (_type.IsOrNullableBool()) return 8;
+                    else if (_type.IsOrNullableNumber() || _type.IsOrNullableDateTime()) return 15;
+                    else if (_type.IsByteArray()) return 30;
+                    else return 12;
                 }
-                else
-                {
-                    return this._width.Value.Around(6, 100);
-                }
+                else return _width.Value.Around(6, 100);
             }
-            set
-            {
-                this._width = value;
-            }
+            init => _width = value;
         }
 
-        private string? _numberFormat = null;
+        
         public string NumberFormat
         {
             get
             {
-                if (this._numberFormat is null)
+                if (_numberFormat is null)
                 {
-                    if (this.Type.IsOrNullableInteger() || this.Type.IsOrNullableUInteger())
-                    {
-                        return NumberFormatTemplate.Int;
-                    }
-                    else if (this.Type.IsOrNullableFloat() || this.Type.IsOrNullableDecimal())
-                    {
-                        return NumberFormatTemplate.Decimal;
-                    }
-                    else if (this.Type.IsOrNullableDateTime())
-                    {
-                        return NumberFormatTemplate.Date;
-                    }
-                    else
-                    {
-                        return string.Empty;
-                    }
+                    if (this.Type.IsOrNullableInteger() || this.Type.IsOrNullableUInteger()) return NumberFormatTemplate.Int;
+                    else if (this.Type.IsOrNullableFloat() || this.Type.IsOrNullableDecimal()) return NumberFormatTemplate.Decimal;
+                    else if (this.Type.IsOrNullableDateTime()) return NumberFormatTemplate.Date;
+                    else return string.Empty;
                 }
-                else
-                {
-                    return this._numberFormat;
-                }
+                else return _numberFormat;
             }
-            set
-            {
-                this._numberFormat = value;
-            }
-
+            init => _numberFormat = value;
         }
-        public Color FontColor { get; set; } = Color.Black;
-
-        public bool IsAddFoot { get; set; } = false;
-        public Type Type { get; private set; }
-        public DataColumnStyle(string columnName, Type type)
-        {
-            this.ColumnName = columnName;
-            this.Type = type;
-        }
+        
+        
     }
 }
 
@@ -163,7 +100,7 @@ namespace KalevaAalto.Models.Excel
 
 namespace KalevaAalto
 {
-    public static partial class Main
+    public static partial class Static
     {
         public static Dictionary<string,DataColumnStyle> ToDictionary(this DataColumnStyle[]? dataColumnStyles)
         {

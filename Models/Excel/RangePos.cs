@@ -10,23 +10,22 @@ namespace KalevaAalto.Models.Excel
 {
     public class RangePos
     {
-        public CellPos StartPos { get; set; }
-        public CellPos EndPos { get; }
 
+        private CellPos _startPos;
+        private CellPos _endPos;
         public RangePos(CellPos startPos, CellPos endPos)
         {
             if (endPos.Row < startPos.Column || endPos.Column < startPos.Column)
             {
                 throw new Exception(@"单元格区域结束点应在开始点之后；");
             }
-            StartPos = startPos;
-            EndPos = endPos;
+            _startPos = startPos;
+            _endPos = endPos;
         }
-
-        private readonly Regex regexAddress = new Regex(@"(?<startPos>[a-zA-Z]+\d+)\:(?<endPos>[a-zA-Z]+\d+)");
+        private readonly Regex s_regexAddress = new Regex(@"(?<startPos>[a-zA-Z]+\d+)\:(?<endPos>[a-zA-Z]+\d+)");
         public RangePos(string address)
         {
-            Match match = regexAddress.Match(address);
+            Match match = s_regexAddress.Match(address);
             if (match.Success)
             {
                 CellPos startPos = new CellPos(match.Groups[@"startPos"].Value);
@@ -35,33 +34,28 @@ namespace KalevaAalto.Models.Excel
                 {
                     throw new Exception(@"单元格区域结束点应在开始点之后；");
                 }
-                StartPos = startPos;
-                EndPos = endPos;
+                _startPos = startPos;
+                _endPos = endPos;
             }
-            else
-            {
-                throw new Exception($"“{address}”不是合法的单元格地址；");
-            }
+            else throw new Exception($"“{address}”不是合法的单元格地址；");
+            
         }
-
         public RangePos(int startPosRow, int startPosColumn, int endPosRow, int endPosColumn)
         {
-            if (endPosRow < startPosColumn || endPosColumn < startPosColumn)
-            {
-                throw new Exception(@"单元格区域结束点应在开始点之后；");
-            }
-            StartPos = new CellPos(startPosRow, startPosColumn);
-            EndPos = new CellPos(endPosRow, endPosColumn);
+            if (endPosRow < startPosColumn || endPosColumn < startPosColumn)throw new Exception(@"单元格区域结束点应在开始点之后；");
+            _startPos = new CellPos(startPosRow, startPosColumn);
+            _endPos = new CellPos(endPosRow, endPosColumn);
         }
 
 
+
+        public CellPos StartPos { get=>_startPos; set=> _startPos=value; }
+        public CellPos EndPos { get=>_endPos; set=> _endPos=value; }
         public string Address { get => $"{StartPos.Address}:{EndPos.Address}"; }
 
 
-        public override string ToString()
-        {
-            return Address;
-        }
+        public override string ToString() => Address;
+
 
     }
 }

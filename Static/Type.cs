@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace KalevaAalto
 {
-    public static partial class Main
+    public static partial class Static
     {
         /// <summary>
         /// 检查该类型是否为可空类型
@@ -33,7 +33,7 @@ namespace KalevaAalto
 
         private readonly static ImmutableHashSet<Type> s_integerType = new HashSet<Type> { typeof(sbyte),typeof(short),typeof(int), typeof(long) }.ToImmutableHashSet();
         private readonly static ImmutableHashSet<Type> s_integerNullableType = new HashSet<Type> { typeof(sbyte?), typeof(short?), typeof(int?), typeof(long?) }.ToImmutableHashSet();
-        private readonly static ImmutableHashSet<Type> s_integerOrNullableType = new HashSet<Type>(s_integerType.Intersect(s_integerNullableType)).ToImmutableHashSet();
+        private readonly static ImmutableHashSet<Type> s_integerOrNullableType = new HashSet<Type>(s_integerType.Union(s_integerNullableType)).ToImmutableHashSet();
         public static bool IsInteger(this Type type) => s_integerType.Contains(type);
         public static bool IsNullableInteger(this Type type) => s_integerNullableType.Contains(type);
         public static bool IsOrNullableInteger(this Type type) => s_integerOrNullableType.Contains(type);
@@ -42,7 +42,7 @@ namespace KalevaAalto
 
         private readonly static ImmutableHashSet<Type> s_uintegerType = new HashSet<Type> { typeof(byte), typeof(ushort), typeof(uint), typeof(ulong) }.ToImmutableHashSet();
         private readonly static ImmutableHashSet<Type> s_uintegerNullableType = new HashSet<Type> { typeof(byte?), typeof(ushort?), typeof(uint?), typeof(ulong?) }.ToImmutableHashSet();
-        private readonly static ImmutableHashSet<Type> s_uintegerOrNullableType = new HashSet<Type>(s_uintegerType.Intersect(s_uintegerNullableType)).ToImmutableHashSet();
+        private readonly static ImmutableHashSet<Type> s_uintegerOrNullableType = new HashSet<Type>(s_uintegerType.Union(s_uintegerNullableType)).ToImmutableHashSet();
         public static bool IsUInteger(this Type type) => s_uintegerType.Contains(type);
         public static bool IsNullableUInteger(this Type type) => s_uintegerNullableType.Contains(type);
         public static bool IsOrNullableUInteger(this Type type) => s_uintegerOrNullableType.Contains(type);
@@ -53,7 +53,7 @@ namespace KalevaAalto
 
         private readonly static ImmutableHashSet<Type> s_floatType = new HashSet<Type> { typeof(float), typeof(double) }.ToImmutableHashSet();
         private readonly static ImmutableHashSet<Type> s_floatNullableType = new HashSet<Type> { typeof(float?), typeof(double?) }.ToImmutableHashSet();
-        private readonly static ImmutableHashSet<Type> s_floatOrNullableType = new HashSet<Type> (s_floatType.Intersect(s_floatNullableType)).ToImmutableHashSet();
+        private readonly static ImmutableHashSet<Type> s_floatOrNullableType = new HashSet<Type> (s_floatType.Union(s_floatNullableType)).ToImmutableHashSet();
         public static bool IsFloat(this Type type) => s_floatType.Contains(type);
         public static bool IsNullableFloat(this Type type) => s_floatNullableType.Contains(type);
         public static bool IsOrNullableFloat(this Type type) => s_floatOrNullableType.Contains(type);
@@ -91,9 +91,9 @@ namespace KalevaAalto
 
 
 
-        private readonly static ImmutableHashSet<Type> s_numberType = new HashSet<Type>(s_integerType.Intersect(s_uintegerType).Intersect(s_floatType).Add(typeof(decimal))).ToImmutableHashSet();
-        private readonly static ImmutableHashSet<Type> s_numberNullableType = new HashSet<Type>(s_integerNullableType.Intersect(s_uintegerNullableType).Intersect(s_floatNullableType).Add(typeof(decimal?))).ToImmutableHashSet();
-        private readonly static ImmutableHashSet<Type> s_numberOrNullableType = new HashSet<Type>(s_numberType.Intersect(s_numberNullableType)).ToImmutableHashSet();
+        private readonly static ImmutableHashSet<Type> s_numberType = new HashSet<Type>(s_integerType.Union(s_uintegerType).Union(s_floatType).Add(typeof(decimal))).ToImmutableHashSet();
+        private readonly static ImmutableHashSet<Type> s_numberNullableType = new HashSet<Type>(s_integerNullableType.Union(s_uintegerNullableType).Union(s_floatNullableType).Add(typeof(decimal?))).ToImmutableHashSet();
+        private readonly static ImmutableHashSet<Type> s_numberOrNullableType = new HashSet<Type>(s_numberType.Union(s_numberNullableType)).ToImmutableHashSet();
         public static bool IsNumber(this Type type) => s_numberType.Contains(type);
         public static bool IsNullableNumber(this Type type) => s_numberNullableType.Contains(type);
         public static bool IsOrNullableNumber(this Type type) => s_numberOrNullableType.Contains(type);
@@ -101,7 +101,7 @@ namespace KalevaAalto
 
 
         private readonly static ImmutableHashSet<Type> s_standardDataTableType = new HashSet<Type>(
-            s_numberOrNullableType.Intersect(new Type[]
+            s_numberOrNullableType.Union(new Type[]
             {
             typeof(bool),typeof(bool?),
             typeof(char),typeof(char?),

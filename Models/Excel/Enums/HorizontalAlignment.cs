@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace KalevaAalto.Models.Excel.Enums
 {
-    public enum HorizontalAlignment
+    public enum HorizontalAlignment : byte
     {
         Left, Center, Right
     }

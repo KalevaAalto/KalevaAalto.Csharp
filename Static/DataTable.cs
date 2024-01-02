@@ -19,12 +19,8 @@ using KalevaAalto.Models.Excel;
 
 namespace KalevaAalto;
 
-public static partial class Main
+public static partial class Static
 {
-
-    
-
-
 
 
 
@@ -32,13 +28,6 @@ public static partial class Main
     {
         return values.Select((item, index) => new { item, index }).ToDictionary(it => it.item, it => it.index);
     }
-
-
-
-
-
-    
-
 
 
     public static string GetSugarTableName(this Type entityType)
@@ -527,7 +516,7 @@ public static partial class Main
     }
     private static string GetInnerText(this Type type, object? obj, string numberFormat)
     {
-        string innerString = emptyString;
+        string innerString = string.Empty;
         if (obj is null || obj is DBNull)
         {
             if (type.IsOrNullableInteger() || type.IsOrNullableUInteger())

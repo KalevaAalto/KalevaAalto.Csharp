@@ -2,7 +2,6 @@
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using OfficeOpenXml;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
@@ -20,7 +19,7 @@ namespace KalevaAalto;
 /// <summary>
 /// KalevaAalto个人的常用库
 /// </summary>
-public static partial class Main
+public static partial class Static
 {
         
     //未找到
@@ -49,9 +48,9 @@ public static partial class Main
     {
         //注册更多的字符编码集
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-
+        
         //注册Epplus
-        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
     }
 
 
@@ -64,7 +63,7 @@ public static partial class Main
             //注册更多的字符编码集
             Task.Run(()=> Encoding.RegisterProvider(CodePagesEncodingProvider.Instance)),
             //注册Epplus
-            Task.Run(() => ExcelPackage.LicenseContext = LicenseContext.NonCommercial)
+            Task.Run(() => OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial)
             );
     }
 
@@ -79,7 +78,7 @@ public static partial class Main
     #region 字符串
 
 
-    public const string emptyString = @"";
+    public const string EmptyString = @"";
 
 
     public static bool IsNullOrEmpty(this string? str)
@@ -403,144 +402,7 @@ public static partial class Main
     public readonly static Action<string>? LogTest = null;
 #endif
 
-    public class Workflow
-    {
-        private Stopwatch globalStopwatch = new Stopwatch();
-        private Stopwatch stopwatch = new Stopwatch();
-        private string subName;
-        private Action<string>? log;
-        private string workingContent = String.Empty;
-        public List<Task> tasks { get; set; } = new List<Task>();
-        public string WorkingContent
-        {
-            get
-            {
-                return this.workingContent;
-            }
-            set
-            {
-                if (!string.IsNullOrEmpty(this.workingContent) && this.log is not null)
-                {
-                    this.log($"进程：{this.subName}：{this.workingContent}成功！！！" + stopwatch.ClockString());
-                }
-                this.stopwatch.Restart();
-                this.workingContent = value;
-            }
-        }
-        public Workflow(Action<string>? log, string subName)
-        {
-            this.log = log;
-            this.globalStopwatch.Restart();
-            this.subName = subName;
-            if (this.log is not null)
-            {
-                this.log(@"-----------------------------------------");
-            }
-        }
-
-        public void AddTask(Task task,string? workingContent = null)
-        {
-                
-            this.tasks.Add(Task.Run(async () =>
-            {
-                Stopwatch stopwatch = Stopwatch.StartNew();
-                await task;
-                if (!string.IsNullOrEmpty(workingContent) && this.log is not null)
-                {
-                    this.log($"进程：{this.subName}：{this.workingContent}成功！！！" + stopwatch.ClockString());
-                }
-            }));
-        }
-
-        public async Task WhenAllTask()
-        {
-            await Task.WhenAll(this.tasks);
-            this.tasks.Clear();
-        }
-
-            
-        public void Log(string str)
-        {
-            if(this.log != null)
-            {
-                this.log(str);
-            }
-        }
-
-
-        public Workflow(string subName, Action<string>? log)
-        {
-            this.log = log;
-            this.globalStopwatch.Restart();
-            this.subName = subName;
-            if (this.log is not null)
-            {
-                this.log(@"-----------------------------------------");
-            }
-                    
-        }
-
-        public Workflow(string subName)
-        {
-            this.log = null;
-            this.globalStopwatch.Restart();
-            this.subName = subName;
-            if(this.log is not null)
-            {
-                this.log(@"-----------------------------------------");
-            }
-        }
-        public void End()
-        {
-            if(this.log is not null)
-            {
-                if (!string.IsNullOrEmpty(this.workingContent))
-                {
-                    this.log($"进程：{this.subName}：{this.workingContent}成功！！！" + stopwatch.ClockString());
-                }
-                this.log(@"==============================================");
-                this.log($"进程：{subName}：结束！！！！" + this.globalStopwatch.ClockString());
-            }
-
-        }
-        public void Stop(string message = emptyString)
-        {
-            if(this.log is not null)
-            {
-                if (string.IsNullOrEmpty(message))
-                {
-                    this.log($"进程：{this.subName}：{this.workingContent}成功！！！" + stopwatch.ClockString());
-                }
-                else
-                {
-                    this.log($"进程：{this.subName}：{this.workingContent}成功，{message}！！！" + stopwatch.ClockString());
-                }
-            }
-            this.workingContent = string.Empty;
-        }
-
-        public void Error(Exception error)
-        {
-            if(this.log is not null)
-            {
-                this.log(@"==============================================");
-                Regex regex = new Regex(@"\s+");
-                string errorMessage = regex.Replace(error.Source + "：" + error.Message, " ");
-                this.log($"进程：{this.subName}：{(string.IsNullOrEmpty(this.workingContent) ? this.subName : this.workingContent)}：异常：{errorMessage}");
-            }
-        }
-
-        public void Error(string errorMessage)
-        {
-            if (this.log is not null)
-            {
-                this.log(@"==============================================");
-                this.log($"进程：{this.subName}：{(string.IsNullOrEmpty(this.workingContent) ? this.subName : this.workingContent)}：异常：{errorMessage}");
-            }
-                    
-        }
-
-    }
+    
 
 
 

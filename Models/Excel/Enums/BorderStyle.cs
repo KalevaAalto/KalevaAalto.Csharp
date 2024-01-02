@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace KalevaAalto.Models.Excel.Enums
 {
-    public enum BorderStyle
+    public enum BorderStyle : byte
     {
         None, Thin, Thick
     }

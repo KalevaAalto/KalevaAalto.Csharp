@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace KalevaAalto.Models.Excel.Enums
 {
-    public enum FontWeight
+    public enum FontWeight : byte
     {
         Thin, Thick
     }

@@ -195,7 +195,7 @@ namespace KalevaAalto.Models.Excel
 
 namespace KalevaAalto
 {
-    public static partial class Main
+    public static partial class Static
     {
         public static IWorksheet ToExcelWorksheet(this DataTable dataTable, IWorkbook workbook, DataColumnStyle[]? excelDataColumns = null)
         {
@@ -203,7 +203,7 @@ namespace KalevaAalto
         }
 
 
-        public static IWorksheet ToExcelWorksheet<T>(this T[] values, IWorkbook workbook, string tableName = emptyString, DataColumnStyle[]? excelDataColumns = null)
+        public static IWorksheet ToExcelWorksheet<T>(this T[] values, IWorkbook workbook, string tableName = EmptyString, DataColumnStyle[]? excelDataColumns = null)
         {
             return workbook.AddWorksheet(values, tableName, excelDataColumns);
         }
