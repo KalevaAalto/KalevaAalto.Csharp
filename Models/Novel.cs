@@ -768,7 +768,7 @@ namespace KalevaAalto.Models
                 XAttribute? hrefAttribute = itemNode.Attribute(@"href");
                 if (hrefAttribute is not null)
                 {
-                    string herfFileName = Path.Combine(Path.GetDirectoryName(contentOpfFileName)??string.Empty,hrefAttribute.Value.ToLower());
+                    string herfFileName = (Path.GetDirectoryName(contentOpfFileName) ?? string.Empty) + '/' + hrefAttribute.Value.ToLower();
                     if (zipArchiveEntrys.ContainsKey(herfFileName)) herfs.Add(herfFileName);
                 }
             });
@@ -840,7 +840,7 @@ namespace KalevaAalto.Models
                 XAttribute? hrefAttribute = itemNode.Attribute(@"href");
                 if (hrefAttribute is not null)
                 {
-                    string herfFileName = Path.Combine(Path.GetDirectoryName(contentOpfFileName) ?? string.Empty, hrefAttribute.Value.ToLower());
+                    string herfFileName = (Path.GetDirectoryName(contentOpfFileName) ?? string.Empty )+'/' + hrefAttribute.Value.ToLower();
                     if (zipArchiveEntrys.ContainsKey(herfFileName)) herfs.Add(herfFileName);
                 }
             });
