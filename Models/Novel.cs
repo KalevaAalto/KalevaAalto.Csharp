@@ -20,6 +20,7 @@ using SqlSugar.DbConvert;
 using Google.Protobuf.WellKnownTypes;
 using OfficeOpenXml.ConditionalFormatting.Contracts;
 using Microsoft.Extensions.FileSystemGlobbing.Internal;
+using System.Xml.XPath;
 
 namespace KalevaAalto.Models
 {
@@ -77,7 +78,7 @@ namespace KalevaAalto.Models
                     rs.Append(line);
                     rs.Append(LineBreak);
                 }
-                if (_paragraphs.Count > 0) rs.Remove(this._paragraphs.Count-LineBreak.Length,LineBreak.Length);
+                if (_paragraphs.Count > 0) rs.Remove(rs.Length-LineBreak.Length,LineBreak.Length);
                 return rs.ToString();
             }
             set
@@ -188,14 +189,14 @@ namespace KalevaAalto.Models
             {
                 StringBuilder result = new StringBuilder();
                 string blankString = BlankString;
-                this._prologue.ForEach(line => { result.Append(blankString); result.Append(line); result.Append(this.LineBreak); });
+                _prologue.ForEach(line => { result.Append(blankString); result.Append(line); result.Append(this.LineBreak); });
                 if (_prologue.Count > 0) result.Remove(result.Length - LineBreak.Length, LineBreak.Length);
                 return result.ToString();
             }
             set
             {
-                this._prologue.Clear();
-                this._prologue.AddRange(NovelChapter.Split(value));
+                _prologue.Clear();
+                _prologue.AddRange(NovelChapter.Split(value));
             }
         }
         public int PrologueLength => this._prologue.Sum(it =>it.Length);
@@ -249,7 +250,7 @@ namespace KalevaAalto.Models
         public void SetContent(string content, string pattern = DefaultTitleRegexString)
         {
             this._prologue.Clear();
-            this._chapters.ForEach(chapter => { chapter.Dispose(); });
+            this._chapters.ForEach(chapter =>chapter.Dispose());
             this._chapters.Clear();
 
 
@@ -259,23 +260,15 @@ namespace KalevaAalto.Models
 
 
             //获取小说序章
-            for (; pos < contentLines.Length && !titleRegex.IsMatch(contentLines[pos]); pos++)
-            {
-                this._prologue.Add(contentLines[pos]);
-            }
+            for (; pos < contentLines.Length && !titleRegex.IsMatch(contentLines[pos]); pos++)this._prologue.Add(contentLines[pos]);
+            
 
 
             //获取小说章节
             for (; pos < contentLines.Length; pos++)
             {
-                if (titleRegex.IsMatch(contentLines[pos]))
-                {
-                    this._chapters.Add(new NovelChapter(contentLines[pos]) { LineBreak = this.LineBreak,BlankCharNumber = BlankCharNumber });
-                }
-                else
-                {
-                    this._chapters.Last().Append(contentLines[pos]);
-                }
+                if (titleRegex.IsMatch(contentLines[pos]))this._chapters.Add(new NovelChapter(contentLines[pos]) { LineBreak = this.LineBreak,BlankCharNumber = BlankCharNumber });
+                else this._chapters.Last().Append(contentLines[pos]);
             }
         }
 
@@ -313,7 +306,7 @@ namespace KalevaAalto.Models
             }
         }
 
-        public override string ToString() =>this.Title + this.Content;
+        public override string ToString() =>Title + LineBreak + Content;
 
 
 
@@ -322,11 +315,11 @@ namespace KalevaAalto.Models
 
         public void SaveAsTxt(string fileName)
         {
-            System.IO.File.WriteAllText(fileName, this.ToString());
+            System.IO.File.WriteAllText(fileName, Content);
         }
         public async Task SaveAsTxtAsync(string fileName)
         {
-            await System.IO.File.WriteAllTextAsync(fileName, this.ToString());
+            await System.IO.File.WriteAllTextAsync(fileName, Content);
         }
         public static Novel LoadNovelFromTxt(string fileName, string pattern = DefaultTitleRegexString)
         {
@@ -342,9 +335,15 @@ namespace KalevaAalto.Models
 
         public void SaveAsXml(string fileName)
         {
-            this.Xml.Save(fileName);
+            Xml.Save(fileName);
         }
-
+        public async Task SaveAsXmlAsync(string fileName,CancellationToken token = default)
+        {
+            using (FileStream stream = File.Create(fileName))
+            {
+                await Xml.SaveAsync(stream, SaveOptions.None, token);
+            }
+        }
 
 
         public static Novel LoadNovelFromXml(string fileName)
@@ -353,38 +352,41 @@ namespace KalevaAalto.Models
             Novel result = new Novel();
 
             XElement? rootElement = xml.Root;
-            if(rootElement is null)throw new Exception($"无法将“{fileName}”加载为XML文档；");
+            if (rootElement is null) throw new Exception($"无法将“{fileName}”加载为XML文档；");
 
-            XElement? titleElement = rootElement.Element(@"title");
-            if(titleElement is not null && string.IsNullOrEmpty(titleElement.Value))result.Title = titleElement.Value;
-            
-
-            XElement? prologueElement = rootElement.Element(@"prologue");
-            if(prologueElement is not null)
+            Parallel.Invoke(() =>
             {
-                IEnumerable<XElement> pElements = prologueElement.Elements(@"p");
-                foreach (XElement pElement in pElements) result.PrologueAppend(pElement.Value);
-            }
-
-            XElement? chaptersElement = rootElement.Element(@"chapters");
-            if (chaptersElement is not null)
+                XElement? titleElement = rootElement.Element(@"title");
+                if (titleElement is not null && string.IsNullOrEmpty(titleElement.Value)) result.Title = titleElement.Value;
+            }, () =>
             {
-                IEnumerable<XElement> chapterElements = chaptersElement.Elements(@"chapter");
-                foreach(XElement chapterElement in chapterElements)
+                XElement? prologueElement = rootElement.Element(@"prologue");
+                if (prologueElement is not null)
                 {
-                    string chapterName = @"第0000章-未知章节";
-                    XElement? chapterTitleElement = chapterElement.Element(@"title");
-                    if(chapterTitleElement is not null)chapterName = chapterTitleElement.Value;
-                    XElement? contentElement = chapterElement.Element(@"content");
-                    if(contentElement is not null)
+                    IEnumerable<XElement> pElements = prologueElement.Elements(@"p");
+                    foreach (XElement pElement in pElements) result.PrologueAppend(pElement.Value);
+                }
+            }, () => {
+                XElement? chaptersElement = rootElement.Element(@"chapters");
+                if (chaptersElement is not null)
+                {
+                    IEnumerable<XElement> chapterElements = chaptersElement.Elements(@"chapter");
+                    foreach (XElement chapterElement in chapterElements)
                     {
-                        IEnumerable<XElement> pElements = contentElement.Elements(@"p");
-                        NovelChapter chapter = new NovelChapter(chapterName);
-                        result.AddChapter(chapter);
-                        foreach(XElement pElement in pElements)chapter.Append(pElement.Value);
+                        string chapterName = @"第0000章-未知章节";
+                        XElement? chapterTitleElement = chapterElement.Element(@"title");
+                        if (chapterTitleElement is not null) chapterName = chapterTitleElement.Value;
+                        XElement? contentElement = chapterElement.Element(@"content");
+                        if (contentElement is not null)
+                        {
+                            IEnumerable<XElement> pElements = contentElement.Elements(@"p");
+                            NovelChapter chapter = new NovelChapter(chapterName);
+                            result.AddChapter(chapter);
+                            foreach (XElement pElement in pElements) chapter.Append(pElement.Value);
+                        }
                     }
                 }
-            }
+            });
 
 
 
@@ -392,6 +394,66 @@ namespace KalevaAalto.Models
 
 
         }
+        public static async Task<Novel> LoadNovelFromXmlAsync(string fileName,CancellationToken token=default)
+        {
+            if (!File.Exists(fileName)) throw new Exception($"文件“{fileName}”不存在；");
+
+            using (FileStream stream = File.Open(fileName, FileMode.Open))
+            {
+                XDocument xml = await XDocument.LoadAsync(stream,LoadOptions.None,token);
+                Novel result = new Novel();
+
+                XElement? rootElement = xml.Root;
+                if (rootElement is null) throw new Exception($"无法将“{fileName}”加载为XML文档；");
+
+
+                await Task.Run(() => {
+                    Parallel.Invoke(() =>
+                    {
+                        XElement? titleElement = rootElement.Element(@"title");
+                        if (titleElement is not null && string.IsNullOrEmpty(titleElement.Value)) result.Title = titleElement.Value;
+                    }, () =>
+                    {
+                        XElement? prologueElement = rootElement.Element(@"prologue");
+                        if (prologueElement is not null)
+                        {
+                            IEnumerable<XElement> pElements = prologueElement.Elements(@"p");
+                            foreach (XElement pElement in pElements) result.PrologueAppend(pElement.Value);
+                        }
+                    }, () => {
+                        XElement? chaptersElement = rootElement.Element(@"chapters");
+                        if (chaptersElement is not null)
+                        {
+                            IEnumerable<XElement> chapterElements = chaptersElement.Elements(@"chapter");
+                            foreach (XElement chapterElement in chapterElements)
+                            {
+                                string chapterName = @"第0000章-未知章节";
+                                XElement? chapterTitleElement = chapterElement.Element(@"title");
+                                if (chapterTitleElement is not null) chapterName = chapterTitleElement.Value;
+                                XElement? contentElement = chapterElement.Element(@"content");
+                                if (contentElement is not null)
+                                {
+                                    IEnumerable<XElement> pElements = contentElement.Elements(@"p");
+                                    NovelChapter chapter = new NovelChapter(chapterName);
+                                    result.AddChapter(chapter);
+                                    foreach (XElement pElement in pElements) chapter.Append(pElement.Value);
+                                }
+                            }
+                        }
+                    });
+
+                });
+
+                return result;
+            }
+
+
+            
+
+
+        }
+
+        
 
 
         private static string s_uuid
@@ -434,13 +496,14 @@ namespace KalevaAalto.Models
             }
         }
 
-
+        private readonly static XNamespace s_contentOpfXmlNs = @"http://www.idpf.org/2007/opf";
+        private readonly static XNamespace s_contentOpfXmlDcNs = @"http://purl.org/dc/elements/1.1/";
         private XDocument contentOpfXml
         {
             get
             {
-                XNamespace ns = @"http://www.idpf.org/2007/opf";
-                XNamespace dcNs = @"http://purl.org/dc/elements/1.1/";
+                XNamespace ns = s_contentOpfXmlNs;
+                XNamespace dcNs = s_contentOpfXmlDcNs;
 
 
                 XElement rootElement = new XElement(ns + @"package", new XAttribute(@"unique-identifier", @"BookId"), new XAttribute(@"version", @"2.0"));
@@ -634,227 +697,177 @@ namespace KalevaAalto.Models
             await File.WriteAllBytesAsync(fileName,await this.GetEpubAsync(cancellationToken));
         }
 
-        /// <summary>
-        /// 从epub文件中获取小说
-        /// </summary>
-        /// <param name="fileName">epub文件的文件路径</param>
+
         public static Novel LoadNovelFromEpub(string fileName)
         {
-            Models.FileSystem.FileNameInfo fileNameInfo = new Models.FileSystem.FileNameInfo(fileName);
 
-
-
-            //检查后缀名是否为epub
-            if (!fileNameInfo.Status || fileNameInfo.Suffix != @"epub")
-            {
-                throw new Exception(@"请选择epub文件！");
-            }
-
-            //检查文件是否存在
-            if (!fileNameInfo.Exists)
-            {
-                throw new Exception($"文件“{fileNameInfo.FileName}”不存在！");
-            }
-
-
+            if (Path.GetExtension(fileName) != @".epub")throw new Exception(@"请选择epub文件！");
+            if (!File.Exists(fileName))throw new Exception($"文件“{fileName}”不存在！");
             try
             {
-                return LoadNovelFromEpub(ZipFile.OpenRead(fileNameInfo.FileName));
+                return LoadNovelFromEpub(ZipFile.OpenRead(fileName));
             }
             catch (Exception ex)
             {
                 throw new Exception($"读取文件“{fileName}”的过程中出现错误：{ex.Message}");
             }
+        }
+        public static async Task<Novel> LoadNovelFromEpubAsync(string fileName, CancellationToken token = default)
+        {
 
-
+            if (Path.GetExtension(fileName) != @".epub") throw new Exception(@"请选择epub文件！");
+            if (!File.Exists(fileName)) throw new Exception($"文件“{fileName}”不存在！");
+            try
+            {
+                return await LoadNovelFromEpubAsync(ZipFile.OpenRead(fileName),token);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"读取文件“{fileName}”的过程中出现错误：{ex.Message}");
+            }
         }
         private static Novel LoadNovelFromEpub(ZipArchive zipArchive)
         {
             Novel result = new Novel();
-            XmlDocument xml = new XmlDocument();
+            XDocument xml;
             XmlNamespaceManager namespaceManager;
-            #region 读取文件列表
-            Dictionary<string, ZipArchiveEntry> zipArchiveEntrys = new Dictionary<string, ZipArchiveEntry>();
-            foreach (ZipArchiveEntry zipArchiveEntry in zipArchive.Entries)
-            {
-                zipArchiveEntrys.Add(zipArchiveEntry.FullName.ToLower(), zipArchiveEntry);
-            }
-            #endregion
+            Dictionary<string, ZipArchiveEntry> zipArchiveEntrys = zipArchive.Entries.Cast<ZipArchiveEntry>().ToDictionary(it => it.FullName.ToLower(), it=>it);
 
-            #region 检查container.xml是否存在
+
+            //container.xml
             string containerXmlFileName = @"META-INF/container.xml".ToLower();
-            if (!zipArchiveEntrys.ContainsKey(containerXmlFileName))
-            {
-                throw new Exception(@"找不到文件“container.xml”！");
-            }
-            #endregion
+            if (!zipArchiveEntrys.ContainsKey(containerXmlFileName))throw new Exception(@"压缩文件包中找不到文件“container.xml”！");
+            xml = XDocument.Load(zipArchiveEntrys[containerXmlFileName].Open());
+            namespaceManager = new XmlNamespaceManager(new NameTable());
+            namespaceManager.AddNamespace(@"ns", s_containerXmlXmlNs.NamespaceName);
+            string? contentOpfFileName = xml.XPathSelectElement(@"/ns:container/ns:rootfiles/ns:rootfile", namespaceManager)?.Attribute(@"full-path")?.Value.ToLower() ?? null;
+            if (contentOpfFileName is null || !zipArchiveEntrys.ContainsKey(contentOpfFileName))throw new Exception(@"压缩文件包中找不到文件“content.opf”！");
 
 
-
-
-            #region 打开container.xml并找到content.opf的位置
-            xml.Load(zipArchiveEntrys[containerXmlFileName].Open());
-
-            // 创建命名空间管理器
-            namespaceManager = new XmlNamespaceManager(xml.NameTable);
-            namespaceManager.AddNamespace(@"ns", @"urn:oasis:names:tc:opendocument:xmlns:container");
-
-            // 使用 XPath 表达式查找 full-path 属性值
-            string? contentOpfFileName = xml.SelectSingleNode(@"/ns:container/ns:rootfiles/ns:rootfile/@full-path", namespaceManager)?.Value?.ToLower() ?? null;
-
-            if (contentOpfFileName is null || !zipArchiveEntrys.ContainsKey(contentOpfFileName))
-            {
-                throw new Exception(@"找不到文件“content.opf”！");
-            }
-            Models.FileSystem.FileNameInfo contentOpfFileNameInfo = new Models.FileSystem.FileNameInfo(contentOpfFileName);
-            #endregion
-
-
-
-            #region 打开content.opf
+            //content.opf
             List<string> herfs = new List<string>();
-            xml.Load(zipArchiveEntrys[contentOpfFileName].Open());
+            xml = XDocument.Load(zipArchiveEntrys[contentOpfFileName].Open());
 
-            // 创建命名空间管理器
-            namespaceManager = new XmlNamespaceManager(xml.NameTable);
-            namespaceManager.AddNamespace(@"ns", @"http://www.idpf.org/2007/opf");
-            namespaceManager.AddNamespace(@"dc", @"http://purl.org/dc/elements/1.1/");
+            namespaceManager = new XmlNamespaceManager(new NameTable());
+            namespaceManager.AddNamespace(@"ns", s_contentOpfXmlNs.NamespaceName);
+            namespaceManager.AddNamespace(@"dc", s_contentOpfXmlDcNs.NamespaceName);
 
-            #region 查找小说标题
-            if (string.IsNullOrEmpty(result.Title))
+            string title = xml.XPathSelectElement(@"/ns:package/ns:metadata/dc:title", namespaceManager)?.Value ?? string.Empty;
+            if (!string.IsNullOrEmpty(result.Title))result.Title = title;
+            
+            IEnumerable<XElement> itemNodes = xml.XPathSelectElements(@"/ns:package/ns:manifest/ns:item", namespaceManager);
+
+            itemNodes.ToList().ForEach(itemNode =>
             {
-                result.Title = xml.SelectSingleNode(@"/ns:package/ns:metadata/dc:title", namespaceManager)?.InnerText ?? string.Empty;
-                if (string.IsNullOrEmpty(result.Title))
+                XAttribute? mediaTypeAttribute = itemNode.Attribute(@"media-type");
+                if (mediaTypeAttribute is null || mediaTypeAttribute.Value != @"application/xhtml+xml")
                 {
-                    result.Title = @"空白文档";
+                    return;
                 }
-            }
-            #endregion
 
+                XAttribute? hrefAttribute = itemNode.Attribute(@"href");
+                if (hrefAttribute is not null)
+                {
+                    string herfFileName = Path.Combine(Path.GetDirectoryName(contentOpfFileName)??string.Empty,hrefAttribute.Value.ToLower());
+                    if (zipArchiveEntrys.ContainsKey(herfFileName)) herfs.Add(herfFileName);
+                }
+            });
 
-
-
-            #region 获取小说章节列表
-            XmlNodeList? itemNodes = xml.SelectNodes(@"/ns:package/ns:manifest/ns:item", namespaceManager);
-            if (itemNodes is not null)
+            
+            herfs.ForEach(herf =>
             {
-                foreach (XmlNode itemNode in itemNodes)
-                {
-                    //检查属性是否存在
-                    if (itemNode.Attributes is null)
-                    {
-                        continue;
-                    }
+                xml = XDocument.Load(zipArchiveEntrys[herf].Open());
 
-                    XmlAttribute? mediaTypeAttribute = itemNode.Attributes[@"media-type"];
-                    if (mediaTypeAttribute is null || mediaTypeAttribute.Value != @"application/xhtml+xml")
-                    {
-                        continue;
-                    }
+                XElement? titleNode = xml.XPathSelectElement(@"/html/head/title");
+                IEnumerable<XElement> pNodes = xml.XPathSelectElements(@"/html/body/p");
+                NovelChapter novelChapter = new NovelChapter(@"第0000章-未知标题");
 
-                    XmlAttribute? hrefAttribute = itemNode.Attributes[@"href"];
-
-                    if (hrefAttribute is not null)
-                    {
-                        string herfFileName = contentOpfFileNameInfo.Path + contentOpfFileNameInfo.Sign + hrefAttribute.Value.ToLower();
-                        if (zipArchiveEntrys.ContainsKey(herfFileName))
-                        {
-                            herfs.Add(herfFileName);
-                        }
-
-                    }
-
-                }
-            }
-            #endregion
-
-            //throw new Exception(herfs.Count.ToString());
-
-            #endregion
+                if (titleNode != null && !string.IsNullOrEmpty(titleNode.Value)) novelChapter.Title = titleNode.Value;
 
 
-            #region 读取小说章节
-            foreach (string herf in herfs)
-            {
-                try
-                {
-                    using (Stream stream = zipArchiveEntrys[herf].Open())
-                    {
-                        using (StreamReader streamReader = new StreamReader(stream, Encoding.UTF8))
-                        {
-                            //读取整个文件内容
-                            string content = streamReader.ReadToEnd()
-                                .RegexReplace(@"&\S*;", string.Empty)
-                                .RegexReplace(@"xmlns(:\S+)?=""\S+""", string.Empty)
-                                .RegexReplace(@"<!.*>", string.Empty)
-                                .RegexReplace(@"&", string.Empty)
-                                .Trim();
-                            xml.LoadXml(content);
-                        }
-                    }
-                }
-                catch
-                {
-                    throw new Exception($"读取文件“{herf}”时出错！");
-                }
-
-
-                XmlNode? titleNode = xml.SelectSingleNode(@"/html/head/title");
-                XmlNodeList? pNodes = xml.SelectNodes(@"/html/body/p");
-                NovelChapter novelChapter = new NovelChapter(@"第0000章-");
-
-                #region 找到小说章节标题
-                if (titleNode != null && !string.IsNullOrEmpty(titleNode.InnerText))
-                {
-                    novelChapter.Title = titleNode.InnerText;
-                }
-
-                #endregion
-
-
-                #region 获取小说内容
                 if (pNodes != null)
                 {
-                    foreach (XmlNode pNode in pNodes)
-                    {
-                        novelChapter.Append(pNode.InnerText);
-                    }
-                }
-                #endregion
-
-
-
-
-                if (novelChapter.Title == @"序章")
-                {
-                    result.Prologue = novelChapter.Content;
-                }
-                else
-                {
-                    result.AddChapter(novelChapter);
+                    foreach (XElement pNode in pNodes) novelChapter.Append(pNode.Value);
                 }
 
-
-            }
-            #endregion
+                if (novelChapter.Title == @"序章") result.Prologue = novelChapter.Content;
+                else result.AddChapter(novelChapter);
+            });
 
             return result;
 
         }
 
-        /// <summary>
-        /// 从epub文件中获取小说
-        /// </summary>
-        /// <param name="zipArchive">epub文件的二进制模式</param>
-        /// <param name="novelName">小说标题名称</param>
-        public static Novel LoadNovelFromEpub(byte[] bytes, string novelName = emptyString)
+        private static async Task<Novel> LoadNovelFromEpubAsync(ZipArchive zipArchive,CancellationToken token = default)
         {
-            // 将 byte[] 转换为 ZipArchive
-            using (MemoryStream memoryStream = new MemoryStream(bytes))
-            using (ZipArchive zipArchive = new ZipArchive(memoryStream))
+            Novel result = new Novel();
+            XDocument xml;
+            XmlNamespaceManager namespaceManager;
+            Dictionary<string, ZipArchiveEntry> zipArchiveEntrys = zipArchive.Entries.Cast<ZipArchiveEntry>().ToDictionary(it => it.FullName.ToLower(), it => it);
+
+
+            //container.xml
+            string containerXmlFileName = @"META-INF/container.xml".ToLower();
+            if (!zipArchiveEntrys.ContainsKey(containerXmlFileName)) throw new Exception(@"压缩文件包中找不到文件“container.xml”！");
+            xml = await XDocument.LoadAsync(zipArchiveEntrys[containerXmlFileName].Open(),LoadOptions.None, token);
+            namespaceManager = new XmlNamespaceManager(new NameTable());
+            namespaceManager.AddNamespace(@"ns", s_containerXmlXmlNs.NamespaceName);
+            string? contentOpfFileName = xml.XPathSelectElement(@"/ns:container/ns:rootfiles/ns:rootfile", namespaceManager)?.Attribute(@"full-path")?.Value.ToLower() ?? null;
+            if (contentOpfFileName is null || !zipArchiveEntrys.ContainsKey(contentOpfFileName)) throw new Exception(@"压缩文件包中找不到文件“content.opf”！");
+
+
+            //content.opf
+            List<string> herfs = new List<string>();
+            xml =await XDocument.LoadAsync(zipArchiveEntrys[contentOpfFileName].Open(),LoadOptions.None, token);
+
+            namespaceManager = new XmlNamespaceManager(new NameTable());
+            namespaceManager.AddNamespace(@"ns", s_contentOpfXmlNs.NamespaceName);
+            namespaceManager.AddNamespace(@"dc", s_contentOpfXmlDcNs.NamespaceName);
+
+            string title = xml.XPathSelectElement(@"/ns:package/ns:metadata/dc:title", namespaceManager)?.Value ?? string.Empty;
+            if (!string.IsNullOrEmpty(result.Title)) result.Title = title;
+
+            IEnumerable<XElement> itemNodes = xml.XPathSelectElements(@"/ns:package/ns:manifest/ns:item", namespaceManager);
+
+            itemNodes.ToList().ForEach(itemNode =>
             {
-                return LoadNovelFromEpub(zipArchive);
-            }
+                XAttribute? mediaTypeAttribute = itemNode.Attribute(@"media-type");
+                if (mediaTypeAttribute is null || mediaTypeAttribute.Value != @"application/xhtml+xml")
+                {
+                    return;
+                }
+
+                XAttribute? hrefAttribute = itemNode.Attribute(@"href");
+                if (hrefAttribute is not null)
+                {
+                    string herfFileName = Path.Combine(Path.GetDirectoryName(contentOpfFileName) ?? string.Empty, hrefAttribute.Value.ToLower());
+                    if (zipArchiveEntrys.ContainsKey(herfFileName)) herfs.Add(herfFileName);
+                }
+            });
+
+
+            herfs.ForEach(herf =>
+            {
+                xml = XDocument.Load(zipArchiveEntrys[herf].Open());
+
+                XElement? titleNode = xml.XPathSelectElement(@"/html/head/title");
+                IEnumerable<XElement> pNodes = xml.XPathSelectElements(@"/html/body/p");
+                NovelChapter novelChapter = new NovelChapter(@"第0000章-未知标题");
+
+                if (titleNode != null && !string.IsNullOrEmpty(titleNode.Value)) novelChapter.Title = titleNode.Value;
+
+
+                if (pNodes != null)
+                {
+                    foreach (XElement pNode in pNodes) novelChapter.Append(pNode.Value);
+                }
+
+                if (novelChapter.Title == @"序章") result.Prologue = novelChapter.Content;
+                else result.AddChapter(novelChapter);
+            });
+
+            return result;
+
         }
 
         public void Clear()
