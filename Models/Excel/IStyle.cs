@@ -25,5 +25,6 @@ namespace KalevaAalto.Models.Excel
         public abstract bool WarpText { get; set; }
         public abstract double FontSize { get; set; }
         public abstract string FontFamily { get; set; }
+        public abstract UnderLineType UnderLineType { get; set; }
     }
 }

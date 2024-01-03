@@ -5,6 +5,7 @@ using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,6 +19,7 @@ namespace KalevaAalto.Extensions.Excel.Epplus
 
             if(obj is OfficeOpenXml.ExcelErrorValue error)
             {
+                
                 switch (error.Type)
                 {
                     case eErrorType.Div0:return ErrorType.Div0;
@@ -37,20 +39,20 @@ namespace KalevaAalto.Extensions.Excel.Epplus
         }
 
 
-        private ExcelRange rng;
+        private ExcelRange _cell;
 
 
-        public Cell(ExcelRange rng) { this.rng = rng; }
+        public Cell(ExcelRange rng) { _cell = rng; }
 
-        public override IStyle Style => new Style(rng.Style);
+        public override IStyle Style => new Style(_cell.Style);
 
-        public override CellPos Pos => new CellPos(rng.Start.Row, rng.Start.Column);
+        public override CellPos Pos => new CellPos(_cell.Start.Row, _cell.Start.Column);
 
-        public override object? Value { get => rng.Value; set => rng.Value = value; }
+        public override object? Value { get => _cell.Value; set => _cell.Value = value; }
 
-        public override IColumn Column => new Column(rng.EntireColumn);
-        public override IRow Row => new Row(rng.EntireRow);
+        public override IColumn Column => new Column(_cell.EntireColumn);
+        public override IRow Row => new Row(_cell.EntireRow);
 
-        public override ErrorType ErrorType => GetErrorType(this.Value);
+        public override ErrorType ErrorType => GetErrorType(Value);
     }
 }

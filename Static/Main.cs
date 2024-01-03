@@ -399,19 +399,19 @@ public static partial class Static
 #if DEBUG
     public readonly static Action<string>? LogTest = (str)=> Console.WriteLine(str);
 #else
-    public readonly static Action<string>? LogTest = null;
+    public readonly static Action<string>? LogTest = (str) => Trace.WriteLine(str);
 #endif
 
-    
-
-
-
-#endregion
 
 
 
 
-        
+    #endregion
+
+
+
+
+
 
 
 

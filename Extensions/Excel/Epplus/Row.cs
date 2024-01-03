@@ -10,15 +10,15 @@ namespace KalevaAalto.Extensions.Excel.Epplus
 {
     internal class Row : IRow
     {
-        private readonly ExcelRangeRow row;
+        private readonly ExcelRangeRow _row;
         public Row(ExcelRangeRow row)
         {
-            this.row = row;
+            _row = row;
         }
-        public override double Height { get => row.Height; set => row.Height = value; }
+        public override double Height { get => _row.Height; set => _row.Height = value; }
 
-        public override int Pos => row.EndRow;
+        public override int Pos => _row.EndRow;
 
-        public override IStyle Style => new Style(row.Style);
+        public override IStyle Style => new Style(_row.Style);
     }
 }

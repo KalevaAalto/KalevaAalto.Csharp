@@ -1,4 +1,5 @@
-﻿using KalevaAalto.Models.Excel;
+﻿using KalevaAalto.Models.DataTable;
+using KalevaAalto.Models.Excel;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace KalevaAalto.Models.Excel
+namespace KalevaAalto.Models.DataTable
 {
     /// <summary>
     /// SqlSugar类的信息暂存类
@@ -17,7 +18,7 @@ namespace KalevaAalto.Models.Excel
     {
         public string ColumnName { get; init; } = string.Empty;
         public string PropertyName { get; init; } = string.Empty;
-        public System.Type Type { get; init; } = typeof(string);
+        public Type Type { get; init; } = typeof(string);
         public DataColumnStyle ExcelDataColumn => new DataColumnStyle(ColumnName, Type);
 
     }
@@ -59,7 +60,7 @@ namespace KalevaAalto
         /// <param name="values">要转化的数组</param>
         /// <param name="tableName">表名</param>
         /// <returns>返回DataTable数据表</returns>
-        public static DataTable ToDataTable<T>(T[] values, string tableName = EmptyString)
+        public static DataTable ToDataTable<T>(this T[] values, string tableName = EmptyString)
         {
             DataTable result = new DataTable(tableName);
 
@@ -69,7 +70,9 @@ namespace KalevaAalto
             //添加字段名称
             foreach (var column in sugarColumnInfos)
             {
-                result.Columns.Add(column.ColumnName, column.Type);
+                Type type = column.Type; 
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))type = Nullable.GetUnderlyingType(type)!;
+                result.Columns.Add(column.ColumnName, type);
             }
 
             //添加数据
@@ -80,7 +83,7 @@ namespace KalevaAalto
                 {
                     PropertyInfo propertyInfo = valueType.GetProperty(column.PropertyName)!;
                     object? obj = propertyInfo.GetValue(value);
-                    if (obj is null)
+                    if (obj is null || obj is DBNull)
                     {
                         row[column.ColumnName] = DBNull.Value;
                     }

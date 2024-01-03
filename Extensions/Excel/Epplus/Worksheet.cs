@@ -10,51 +10,51 @@ namespace KalevaAalto.Extensions.Excel.Epplus
 {
     public class Worksheet : IWorksheet
     {
-        private ExcelWorksheet worksheet { get; }
+        private ExcelWorksheet _worksheet;
 
 
         public Worksheet(ExcelWorksheet excelWorksheet)
         {
-            worksheet = excelWorksheet;
+            _worksheet = excelWorksheet;
         }
 
 
-        public override string Name { get => worksheet.Name; set => worksheet.Name = value; }
+        public override string Name { get => _worksheet.Name; set => _worksheet.Name = value; }
 
         public override IRange? Range
         {
             get
             {
-                var dimension = worksheet.Dimension;
+                var dimension = _worksheet.Dimension;
                 return this.GetRange(new RangePos(Models.Excel.CellPos.DefaultStartPos, new Models.Excel.CellPos(dimension.Rows, dimension.Columns)));
             }
         }
 
         protected override ICell GetCell(Models.Excel.CellPos cellPos)
         {
-            return new Cell(worksheet.Cells[cellPos.Row, cellPos.Column]);
+            return new Cell(_worksheet.Cells[cellPos.Row, cellPos.Column]);
         }
 
         protected override IRange GetRange(RangePos rangePos)
         {
-            return new Range(this.worksheet.Cells[rangePos.StartPos.Row, rangePos.StartPos.Column, rangePos.EndPos.Row, rangePos.EndPos.Column]);
+            return new Range(_worksheet.Cells[rangePos.StartPos.Row, rangePos.StartPos.Column, rangePos.EndPos.Row, rangePos.EndPos.Column]);
         }
 
 
         public override void Test()
         {
             // 设置打印方向为横向
-            worksheet.PrinterSettings.Orientation = eOrientation.Landscape;
+            _worksheet.PrinterSettings.Orientation = eOrientation.Landscape;
 
             // 设置纸张大小为A5
-            worksheet.PrinterSettings.PaperSize = ePaperSize.A5;
+            _worksheet.PrinterSettings.PaperSize = ePaperSize.A5;
 
             // 设置页面居中
-            worksheet.PrinterSettings.HorizontalCentered = true;
+            _worksheet.PrinterSettings.HorizontalCentered = true;
             //worksheet.PrinterSettings.VerticalCentered = true;
 
             // 将工作表调整为一页
-            worksheet.PrinterSettings.FitToPage = true;
+            _worksheet.PrinterSettings.FitToPage = true;
             //worksheet.PrinterSettings.FitToWidth = 1;
             //worksheet.PrinterSettings.FitToHeight = 1;
         }

@@ -10,6 +10,7 @@ using OfficeOpenXml;
 using System.Reflection;
 using KalevaAalto.Models.Excel.Enums;
 using KalevaAalto;
+using KalevaAalto.Models.DataTable;
 
 namespace KalevaAalto.Models.Excel
 {

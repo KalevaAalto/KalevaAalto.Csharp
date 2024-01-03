@@ -12,39 +12,33 @@ namespace KalevaAalto.Extensions.Excel.Epplus
 {
     public class Workbook : IWorkbook
     {
-        private ExcelPackage? package = null;
+        private ExcelPackage? _package;
         
 
         public Workbook(string fileName) : base(fileName) { }
         protected override void Init()
         {
-            if (FileExist)
-            {
-                package = new ExcelPackage(new FileInfo(FileName));
-            }
-            else
-            {
-                package = new ExcelPackage();
-            }
+            if (FileExist) _package = new ExcelPackage(new FileInfo(FileName));
+            else _package = new ExcelPackage();
         }
 
 
-        public override IWorksheet[] Worksheets { get => package!.Workbook.Worksheets.Cast<ExcelWorksheet>().Select(it => new Worksheet(it)).ToArray(); }
+        public override IWorksheet[] Worksheets { get => _package!.Workbook.Worksheets.Cast<ExcelWorksheet>().Select(it => new Worksheet(it)).ToArray(); }
 
 
         protected override void _Save()
         {
-            package!.SaveAs(FileName);
+            _package!.SaveAs(FileName);
         }
 
         public override IWorksheet AddWorksheet(string name)
         {
-            return new Worksheet(package!.Workbook.Worksheets.Add(name));
+            return new Worksheet(_package!.Workbook.Worksheets.Add(name));
         }
 
         public override void Dispose()
         {
-            this.package?.Dispose();
+            _package!.Dispose();
         }
     }
 }

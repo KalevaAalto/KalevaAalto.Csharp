@@ -38,11 +38,11 @@ namespace KalevaAalto.Models
         }
 
 
-        public async Task<System.Data.DataTable> Query(string sql)
+        public async Task<System.Data.DataTable> QueryAsync(string sql, CancellationToken token = default)
         {
             try
             {
-                return await db.Ado.GetDataTableAsync(sql);
+                return await db.Ado.GetDataTableAsync(sql,token);
             }
             catch (Exception error)
             {
@@ -52,11 +52,11 @@ namespace KalevaAalto.Models
         }
 
 
-        public async Task Run(string sql)
+        public async Task RunAsync(string sql, CancellationToken token = default)
         {
             try
             {
-                await db.Ado.ExecuteCommandAsync(sql);
+                await db.Ado.ExecuteCommandAsync(sql,token);
             }
             catch (Exception error)
             {
@@ -66,7 +66,7 @@ namespace KalevaAalto.Models
 
 
 
-        public async Task UploadDataTable(System.Data.DataTable dataTable)
+        public async Task UploadDataTableAsync(System.Data.DataTable dataTable, CancellationToken token = default)
         {
             if(dataTable.Columns.Count == 0)
             {
@@ -119,13 +119,13 @@ namespace KalevaAalto.Models
                     dataRowString.Remove(dataRowString.Length - 1, 1);
                 })
                 );
-            await db.Ado.ExecuteCommandAsync($"insert into `{dataTable.TableName}`({columnString}) value{dataRowString};");
+            await db.Ado.ExecuteCommandAsync($"insert into `{dataTable.TableName}`({columnString}) value{dataRowString};",token);
         }
 
 
 
 
-        public async Task ClearTable(string tableName, string[]? conditions = null)
+        public async Task ClearTableAsync(string tableName, string[]? conditions = null, CancellationToken token = default)
         {
             if (conditions is null || conditions.Length == 0)
             {
@@ -147,7 +147,7 @@ namespace KalevaAalto.Models
                 }
                 conditionsString.Remove(conditionsString.Length - partString.Length, partString.Length);
 
-                await db.Ado.ExecuteCommandAsync($"delete from `{tableName}` where {conditionsString.ToString()};");
+                await db.Ado.ExecuteCommandAsync($"delete from `{tableName}` where {conditionsString.ToString()};", token);
             }
 
 
@@ -157,25 +157,25 @@ namespace KalevaAalto.Models
 
 
 
-        public async Task ClearTable(System.Data.DataTable table, string[]? conditions = null)
+        public async Task ClearTableAsync(System.Data.DataTable table, string[]? conditions = null, CancellationToken token = default)
         {
-            await ClearTable(table.TableName, conditions);
-            await UploadDataTable(table);
+            await ClearTableAsync(table.TableName, conditions,token);
+            await UploadDataTableAsync(table, token);
         }
 
-        public async Task<string[]> GetColumnNames(string tableName)
+        public async Task<string[]> GetColumnNamesAsync(string tableName, CancellationToken token = default)
         {
-            System.Data.DataTable dataTable = await Query($"DESC {tableName};");
+            System.Data.DataTable dataTable = await QueryAsync($"DESC {tableName};",token);
             return dataTable.Rows.Cast<DataRow>().Select(it => (string)it[@"Field"]).ToArray();
         }
 
 
-        public async Task Sync(string from_table_name, string to_table_name, string[]? conditions = null)
+        public async Task Sync(string from_table_name, string to_table_name, string[]? conditions = null, CancellationToken token = default)
         {
-            await ClearTable(to_table_name, conditions);
+            await ClearTableAsync(to_table_name, conditions);
 
 
-            string[] columns = await GetColumnNames(from_table_name);
+            string[] columns = await GetColumnNamesAsync(from_table_name, token);
             StringBuilder columns_str = new StringBuilder();
             foreach (string column in columns)
             {
@@ -186,7 +186,7 @@ namespace KalevaAalto.Models
             }
             columns_str.Remove(columns_str.Length - 1, 1);
 
-            StringBuilder sql = new StringBuilder($"insert into `{to_table_name}`({columns_str.ToString()}) select {columns_str.ToString()} from `{from_table_name}`");
+            StringBuilder sql = new StringBuilder($"insert into `{to_table_name}`({columns_str}) select {columns_str} from `{from_table_name}`");
             if (conditions != null)
             {
                 sql.Append(" where ");
@@ -204,7 +204,7 @@ namespace KalevaAalto.Models
             }
             sql.Append(";");
 
-            await db.Ado.ExecuteCommandAsync(sql.ToString());
+            await db.Ado.ExecuteCommandAsync(sql.ToString(),token);
 
         }
 
@@ -212,11 +212,11 @@ namespace KalevaAalto.Models
 
 
 
-        public async Task CleanTableRepetitiveContent<T>() where T : class, new()
+        public async Task CleanTableRepetitiveContentAsync<T>(CancellationToken token = default) where T : class, new()
         {
-            T[] values = (await db.Queryable<T>().ToArrayAsync()).AsParallel().ToHashSet().ToArray();
-            await db.Deleteable<T>().ExecuteCommandAsync();
-            await db.Insertable(values).ExecuteCommandAsync();
+            T[] values = (await db.Queryable<T>().ToListAsync(token)).AsParallel().ToHashSet().ToArray();
+            await db.Deleteable<T>().ExecuteCommandAsync(token);
+            await db.Insertable(values).ExecuteCommandAsync(token);
         }
 
 
@@ -224,10 +224,10 @@ namespace KalevaAalto.Models
 
 
 
-        public async void Reconnect()
+        public async void Reconnect(CancellationToken token = default)
         {
             // 如果MySQL连接已关闭，则尝试重新连接
-            await Query(@"select 1;");// 向MySQL服务器发送一个简单的心跳查询
+            await QueryAsync(@"select 1;",token);// 向MySQL服务器发送一个简单的心跳查询
 
         }
 
@@ -345,5 +345,18 @@ namespace KalevaAalto.Models
 
 
 
+
+}
+
+
+namespace KalevaAalto
+{
+    public static partial class Static 
+    {
+        public static async Task<T[]> ToArrayAsync<T>(this ISugarQueryable<T> sugarQueryable, CancellationToken token) => (await sugarQueryable.ToListAsync(token)).ToArray();
+
+
+
+    }
 
 }

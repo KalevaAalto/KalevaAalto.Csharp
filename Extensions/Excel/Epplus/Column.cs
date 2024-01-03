@@ -10,15 +10,15 @@ namespace KalevaAalto.Extensions.Excel.Epplus
 {
     internal class Column : IColumn
     {
-        private ExcelRangeColumn column;
+        private ExcelRangeColumn _column;
         public Column(ExcelRangeColumn column)
         {
-            this.column = column;
+            _column = column;
         }
 
-        public override int Pos => column.EndColumn;
-        public override IStyle Style => new Style(column.Style);
-        public override double Width { get => column.Width; set => column.Width = value ; }
+        public override int Pos => _column.EndColumn;
+        public override IStyle Style => new Style(_column.Style);
+        public override double Width { get => _column.Width; set => _column.Width = value ; }
 
     }
 }
