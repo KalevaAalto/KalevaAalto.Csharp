@@ -28,9 +28,9 @@ namespace KalevaAalto
 {
     public static partial class Static
     {
-        public static Models.Excel.ClassColumnInfo[] GetClassColumnInfos(this Type entityType)
+        public static ClassColumnInfo[] GetClassColumnInfos(this Type entityType)
         {
-            List<Models.Excel.ClassColumnInfo> result = new List<Models.Excel.ClassColumnInfo>();
+            List<ClassColumnInfo> result = new List<ClassColumnInfo>();
 
             PropertyInfo[] properties = entityType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
@@ -39,11 +39,11 @@ namespace KalevaAalto
                 var sugarColumnAttribute = property.GetCustomAttribute<SugarColumn>(inherit: true);
                 if (sugarColumnAttribute is not null && !sugarColumnAttribute.ColumnName.IsNullOrEmpty())
                 {
-                    result.Add(new Models.Excel.ClassColumnInfo { ColumnName = sugarColumnAttribute.ColumnName, PropertyName = property.Name, Type = property.PropertyType });
+                    result.Add(new ClassColumnInfo { ColumnName = sugarColumnAttribute.ColumnName, PropertyName = property.Name, Type = property.PropertyType });
                 }
                 else
                 {
-                    result.Add(new Models.Excel.ClassColumnInfo { ColumnName = property.Name, PropertyName = property.Name, Type = property.PropertyType });
+                    result.Add(new ClassColumnInfo { ColumnName = property.Name, PropertyName = property.Name, Type = property.PropertyType });
                 }
             }
 
